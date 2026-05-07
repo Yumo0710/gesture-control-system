@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+
+    <title>Gesture Menu System</title>
+
+    <!-- 載入 CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <!-- 網站標題 -->
+    <header class="header">
+
+        <h1>Gesture Menu System</h1>
+
+        <p>手勢互動點餐系統</p>
+
+    </header>
+
+    <!-- 控制模式 -->
+    <section class="mode-bar">
+
+    <button onclick="setMode('focus')">
+
+        Focus Mode
+
+    </button>
+
+    <button onclick="setMode('mouse')">
+
+        Virtual Mouse
+
+    </button>
+
+</section>
+
+
+    <!-- 分類按鈕 -->
+    <section class="category-bar">
+
+        <button onclick="showCategory('all')">首頁</button>
+
+        <button onclick="showCategory('burger')">漢堡</button>
+
+        <button onclick="showCategory('drink')">飲料</button>
+
+        <button onclick="showCategory('dessert')">甜點</button>
+
+    </section>
+
+
+    <!-- 商品區 -->
+    <main class="menu-container">
+
+
+        <!-- 商品卡片 -->
+        <div class="menu-card burger">
+
+            <!-- 商品圖片 -->
+            <img src="{{ url_for('static', filename='images/beefburger.png') }}">
+
+            <!-- 商品名稱 -->
+            <h2>牛肉漢堡</h2>
+
+            <!-- 商品價格 -->
+            <p class="price">$75</p>
+
+            <!-- 加減按鈕 -->
+            <div class="control-area">
+
+                <button onclick="decrease(this, 75)">-</button>
+
+                <span class="quantity">0</span>
+
+                <button onclick="increase(this, 75)">+</button>
+
+            </div>
+
+        </div>
+
+
+        <!-- 第二個商品 -->
+        <div class="menu-card burger">
+
+            <img src="{{ url_for('static', filename='images/chickenburger.png') }}">
+
+            <h2>炸雞漢堡</h2>
+
+            <p class="price">$60</p>
+
+            <div class="control-area">
+
+                <button onclick="decrease(this, 60)">-</button>
+
+                <span class="quantity">0</span>
+
+                <button onclick="increase(this, 60)">+</button>
+
+            </div>
+
+        </div>
+
+
+        <!-- 第三個商品 -->
+        <div class="menu-card drink">
+
+            <img src="{{ url_for('static', filename='images/cola.png') }}">
+
+            <h2>可樂</h2>
+
+            <p class="price">$30</p>
+
+            <div class="control-area">
+
+                <button onclick="decrease(this, 30)">-</button>
+
+                <span class="quantity">0</span>
+
+                <button onclick="increase(this, 30)">+</button>
+
+            </div>
+
+        </div>
+
+        <!-- 第四個商品 -->
+        <div class="menu-card drink">
+
+            <img src="{{ url_for('static', filename='images/sprite.png') }}">
+
+            <h2>雪碧</h2>
+
+            <p class="price">$30</p>
+
+            <div class="control-area">
+
+                <button onclick="decrease(this, 30)">-</button>
+
+                <span class="quantity">0</span>
+
+                <button onclick="increase(this, 30)">+</button>
+
+            </div>
+
+        </div>
+
+        <!-- 第五個商品 -->
+        <div class="menu-card dessert">
+
+            <img src="{{ url_for('static', filename='images/ice-cream.png') }}">
+
+            <h2>冰淇淋</h2>
+
+            <p class="price">$30</p>
+
+            <div class="control-area">
+
+                <button onclick="decrease(this, 40)">-</button>
+
+                <span class="quantity">0</span>
+
+                <button onclick="increase(this, 40)">+</button>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <!-- 底部狀態列 -->
+    <footer class="footer">
+        <div>
+
+            <p>控制模式：</p>
+
+            <p id="mode-text">Focus</p>
+
+        </div>
+
+        <div>
+
+            <p>目前狀態：</p>
+
+            <p id="status-text">Waiting Gesture...</p>
+
+        </div>
+
+        <div>
+
+            <p>總金額：</p>
+
+            <p id="total-price">$0</p>
+
+        </div>
+
+    </footer>
+
+
+    <!-- 載入 SocketIO -->
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+
+    <!-- 載入 JS -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+
+</html>
