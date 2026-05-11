@@ -1,52 +1,70 @@
-# Flask:
-#   建立網站伺服器
-#
-# render_template:
-#   用來讀取 HTML 頁面
+# Flask
 from flask import Flask, render_template
+
+# SocketIO
 from flask_socketio import SocketIO
 
+# Focus Mode
+from control.focus_mode import FocusMode
 
-# 建立 Flask 網站物件
-#
-# __name__ 代表目前這份 Python 檔案
-#
-# Flask 會根據這個位置
-# 找到 templates / static 資料夾
+
+# 建立 Flask
 app = Flask(__name__)
 
-# 建立 SocketIO 物件
-socketio = SocketIO(app)
+
+# 建立 SocketIO
+socketio = SocketIO(
+
+    app,
+
+    async_mode='threading',
+
+    cors_allowed_origins="*"
+
+)
 
 
-# @加入特殊功能  app.route("/") == local/ 把local/ 網址登入給下方函式 
-# 當有人進入此網址 就會執行下面函式
+# 建立 Focus Mode
+focus_mode = FocusMode()
+
+
+# 首頁
 @app.route('/')
 
 def home():
 
-    # 讀取 templates 資料夾中的 HTML
     return render_template("index.html")
 
 
-# 當網頁發送： socket.emit("menu_select", data)
-# 觸發下列函式
-@socketio.on('menu_select')
+# 接收 AI Client 手勢
+@socketio.on("gesture")
 
-def handle_menu(data):
+def handle_gesture(data):
 
-    # 在 Terminal 顯示資料
-    print("選擇:", data)
+    # 取得手勢
+    gesture = data["gesture"]
+
+    print("收到手勢:", gesture)
 
 
+    # 更新 Focus
+    result = focus_mode.update(gesture)
 
-if __name__ == '__main__':
 
-    # 啟動 Flask 網站
-    #
-    # host='0.0.0.0'
-    #   允許區域網路存取
-    #
-    # port=5000
-    #   網站埠號
-    socketio.run(app, host='0.0.0.0', port=5000)
+    # 如果沒有事件
+    if result is None:
+
+        return
+
+
+    print("事件:", result)
+
+
+    # 傳送給前端
+    socketio.emit(
+
+        "focus_update",
+
+        result
+
+    )

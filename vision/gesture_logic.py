@@ -1,4 +1,5 @@
 import time
+import math
 
 
 class GestureLogic:
@@ -10,9 +11,6 @@ class GestureLogic:
         # 左右滑動閾值
         self.swipe_threshold = 0.08
 
-        # 大拇指閾值
-        self.thumb_threshold = 0.05
-
         # 冷卻時間
         self.cooldown = 0.5
 
@@ -20,9 +18,10 @@ class GestureLogic:
 
         # 是否進入加減模式
         self.value_mode = False
-        
+
         # 大拇指是否已回到中立
         self.thumb_ready = False
+
 
     # =========================
     # 冷卻時間判定
@@ -32,11 +31,31 @@ class GestureLogic:
         current_time = time.time()
 
         if current_time - self.last_trigger_time < self.cooldown:
+
             return False
 
         self.last_trigger_time = current_time
 
         return True
+
+
+    # =========================
+    # 計算角度
+    # =========================
+    def calculate_angle(self, p1, p2):
+
+        dx = p2.x - p1.x
+
+        dy = p2.y - p1.y
+
+        angle = math.degrees(
+
+            math.atan2(dy, dx)
+
+        )
+
+        return angle
+
 
     # =========================
     # 握拳判定
@@ -44,6 +63,7 @@ class GestureLogic:
     def is_fist(self, hand_landmarks):
 
         fingers = [
+
             (8, 6),    # 食指
             (12, 10),  # 中指
             (16, 14),  # 無名指
@@ -55,14 +75,18 @@ class GestureLogic:
         for tip, joint in fingers:
 
             tip_y = hand_landmarks.landmark[tip].y
+
             joint_y = hand_landmarks.landmark[joint].y
 
             # 必須彎曲超過一定距離
             if (tip_y - joint_y) > 0.08:
+
                 folded_count += 1
 
         # 至少4指真的彎曲
         return folded_count >= 4
+
+
     # =========================
     # 左右滑動
     # =========================
@@ -71,7 +95,9 @@ class GestureLogic:
         # Value Mode 中
         # 不允許左右滑動
         if self.value_mode:
+
             return None
+
 
         # 握拳進入 Value Mode
         if self.is_fist(hand_landmarks):
@@ -79,13 +105,13 @@ class GestureLogic:
             if self.can_trigger():
 
                 self.value_mode = True
-                
-                self.thumb_ready = False
 
+                self.thumb_ready = False
 
                 print("ENTER VALUE MODE")
 
             return None
+
 
         index_finger = hand_landmarks.landmark[8]
 
@@ -93,25 +119,32 @@ class GestureLogic:
 
         gesture = None
 
+
         if self.previous_x is not None:
 
             diff_x = current_x - self.previous_x
+
 
             # 往右
             if diff_x > self.swipe_threshold:
 
                 if self.can_trigger():
+
                     gesture = "RIGHT"
+
 
             # 往左
             elif diff_x < -self.swipe_threshold:
 
                 if self.can_trigger():
+
                     gesture = "LEFT"
+
 
         self.previous_x = current_x
 
         return gesture
+
 
     # =========================
     # 大拇指偵測
@@ -120,20 +153,33 @@ class GestureLogic:
 
         # 未進入 Value Mode
         if not self.value_mode:
+
             return None
 
+
         thumb_tip = hand_landmarks.landmark[4]
+
         thumb_joint = hand_landmarks.landmark[2]
 
-        diff_y = thumb_joint.y - thumb_tip.y
+
+        # 計算大拇指角度
+        angle = self.calculate_angle(
+
+            thumb_joint,
+
+            thumb_tip
+
+        )
+
+
 
         # =========================
-        # 等待回到中立
+        # 等待回中立
         # =========================
         if not self.thumb_ready:
 
-            # 大拇指回到中間
-            if abs(diff_y) < 0.02:
+            # 接近水平
+            if -20 < angle < 20:
 
                 self.thumb_ready = True
 
@@ -141,26 +187,33 @@ class GestureLogic:
 
             return None
 
+
         # =========================
         # 👍 PLUS
         # =========================
-        if diff_y > self.thumb_threshold:
+        if angle < -40:
 
             if self.can_trigger():
 
                 self.value_mode = False
 
+                print("PLUS")
+
                 return "PLUS"
+
 
         # =========================
         # 👎 MINUS
         # =========================
-        elif diff_y < -self.thumb_threshold:
+        elif angle > 40:
 
             if self.can_trigger():
 
                 self.value_mode = False
 
+                print("MINUS")
+
                 return "MINUS"
+
 
         return None
