@@ -1,0 +1,204 @@
+# AGENTS.md - Gesture Control System 專案協作指南
+
+本文件提供給 AI agent 或協作者使用，目標是在修改本專案時維持既有架構、命名風格與資料流一致。
+
+## 專案概覽
+
+本專案是一個以 Python 為核心的手勢控制系統，使用 OpenCV 取得攝影機畫面、MediaPipe 偵測手部 landmarks，並透過 Flask + Socket.IO 將手勢結果同步到前端頁面。
+
+主要資料流如下：
+
+```text
+Webcam 攝影機
+  -> OpenCV 取得影像
+  -> MediaPipe 偵測手部
+  -> GestureLogic 判斷手勢
+  -> Socket.IO 傳送 gesture
+  -> Flask Server 接收 gesture
+  -> Control Mode 更新狀態
+  -> Socket.IO 推送 focus_update
+  -> 前端 JavaScript 更新 UI
+```
+
+## 目前專案架構
+
+```text
+gesture-control-system/
+├─ main.py
+├─ requirements.txt
+├─ README.md
+├─ AGENTS.txt
+├─ vision/
+│  ├─ webcam.py
+│  ├─ hand_detector.py
+│  └─ gesture_logic.py
+├─ control/
+│  ├─ focus_mode.py
+│  └─ virtual_mouse.py
+└─ flask_server/
+   ├─ app.py
+   ├─ templates/
+   │  └─ index.html
+   └─ static/
+      ├─ style.css
+      ├─ script.js
+      └─ images/
+         ├─ beefburger.png
+         ├─ chickenburger.png
+         ├─ cola.png
+         ├─ ice-cream.png
+         └─ sprite.png
+```
+
+## 模組責任
+
+### `main.py`
+
+- 專案主入口。
+- 啟動 Flask Socket.IO server。
+- 建立 Socket.IO client，將手勢資料送回本機 Flask server。
+- 初始化 `Webcam`、`HandDetector`、`GestureLogic`。
+- 執行攝影機讀取、手部偵測、手勢判斷與畫面顯示主迴圈。
+
+### `vision/`
+
+負責所有影像輸入與手勢辨識前處理。
+
+- `webcam.py`
+  - 管理攝影機開啟、解析度、FPS、影像讀取與釋放。
+  - 回傳已水平翻轉的 frame，方便使用者像照鏡子一樣操作。
+
+- `hand_detector.py`
+  - 使用 MediaPipe Hands 偵測單手。
+  - 回傳畫上 landmarks 的 frame 與 `hand_landmarks`。
+
+- `gesture_logic.py`
+  - 將 hand landmarks 轉換為語意化手勢。
+  - 目前包含左右滑動、握拳進入 value mode、拇指加減判斷。
+  - 輸出手勢字串，例如 `LEFT`、`RIGHT`、`PLUS`、`MINUS`。
+
+### `control/`
+
+負責將手勢轉換成實際控制行為。
+
+- `focus_mode.py`
+  - 維護目前選取項目的 index。
+  - 根據 `LEFT`、`RIGHT`、`PLUS`、`MINUS`、`SELECT` 產生 UI 更新事件。
+  - 回傳格式需維持為物件，例如：
+
+```python
+{
+    "type": "MOVE",
+    "index": 1
+}
+```
+
+- `virtual_mouse.py`
+  - 目前保留給虛擬滑鼠模式。
+  - 若未來實作滑鼠控制，應優先放在此檔案或此資料夾下的新模組。
+
+### `flask_server/`
+
+負責網頁服務與前後端 Socket.IO 溝通。
+
+- `app.py`
+  - 建立 Flask app 與 Socket.IO server。
+  - 接收 `gesture` 事件。
+  - 呼叫 `FocusMode.update()`。
+  - 將結果透過 `focus_update` 推送到前端。
+
+- `templates/index.html`
+  - 前端主要 HTML 頁面。
+
+- `static/script.js`
+  - 接收 Socket.IO 的 `focus_update`。
+  - 更新目前選取卡片、商品數量與總價。
+
+- `static/style.css`
+  - 前端樣式。
+
+- `static/images/`
+  - 商品或 UI 需要的靜態圖片資源。
+
+## 架構修改原則
+
+1. 修改時必須遵守目前分層：
+   - 攝影機、影像處理、手部偵測放在 `vision/`。
+   - 手勢對應到控制行為放在 `control/`。
+   - Flask route、Socket.IO server 與網頁資源放在 `flask_server/`。
+   - 程式主啟動流程放在 `main.py`。
+
+2. 如果新增架構，必須保留原本架構：
+   - 不要移除既有 `vision/`、`control/`、`flask_server/` 分層。
+   - 新功能應以擴充方式加入，例如新增檔案或新增 class。
+   - 若需要搬移功能，必須保留相容介面，避免破壞 `main.py`、`app.py`、`script.js` 之間的資料流。
+
+3. 不要把不同責任混在同一層：
+   - 不要在 `vision/` 直接操作前端 UI。
+   - 不要在 `flask_server/static/script.js` 實作 MediaPipe 或 OpenCV 邏輯。
+   - 不要在 `main.py` 堆放大量控制規則；應拆到 `vision/` 或 `control/`。
+
+4. Socket.IO 事件名稱需保持清楚：
+   - Python client 傳給 Flask server：`gesture`。
+   - Flask server 傳給前端：`focus_update`。
+   - 若新增事件，需在事件附近加中文註解說明用途。
+
+## 程式碼編輯規範
+
+1. 每次編輯程式碼後，新增或修改的關鍵邏輯都需要中文註解。
+   - 註解應說明「為什麼這樣做」或「這段邏輯的用途」。
+   - 不要寫沒有資訊量的註解，例如單純重複程式碼。
+
+2. 現有中文註解若出現亂碼，修改附近程式時應順手修正為可讀中文。
+
+3. 保持函式與 class 職責單一。
+   - 新增手勢判斷優先放在 `GestureLogic`。
+   - 新增控制模式優先放在 `control/`。
+   - 新增前端互動優先放在 `flask_server/static/script.js`。
+
+4. 手勢字串建議使用全大寫英文，例如：
+   - `LEFT`
+   - `RIGHT`
+   - `PLUS`
+   - `MINUS`
+   - `SELECT`
+
+5. 新增回傳給前端的資料時，維持 dictionary / JSON 物件格式清楚，並至少包含 `type` 欄位。
+
+## 測試與驗證建議
+
+修改後至少確認以下項目：
+
+1. `python main.py` 可以正常啟動。
+2. Flask server 可在 `http://localhost:5000` 開啟。
+3. 攝影機畫面能正常顯示。
+4. 偵測到手勢時，終端機有輸出對應 gesture。
+5. 前端能收到 `focus_update` 並更新選取狀態或數量。
+
+如果修改的是前端，需確認：
+
+1. 商品卡片選取狀態正常。
+2. 加減數量正常。
+3. 總價更新正常。
+4. 手機與桌面寬度下不會出現文字或 UI 重疊。
+
+## 新增功能建議位置
+
+- 新增攝影機設定：`vision/webcam.py`
+- 新增手部偵測設定：`vision/hand_detector.py`
+- 新增手勢判斷：`vision/gesture_logic.py`
+- 新增 focus 類控制：`control/focus_mode.py`
+- 新增滑鼠控制：`control/virtual_mouse.py`
+- 新增其他控制模式：`control/`
+- 新增 Flask API 或 Socket.IO server event：`flask_server/app.py`
+- 新增前端事件處理：`flask_server/static/script.js`
+- 新增樣式：`flask_server/static/style.css`
+- 新增圖片素材：`flask_server/static/images/`
+
+## 維護提醒
+
+- 優先維持簡單清楚的資料流。
+- 不要為小功能引入過重框架。
+- 修改跨模組資料格式時，要同步更新 Python server 與前端 JavaScript。
+- 若新增第三方套件，需更新 `requirements.txt`。
+- 若調整啟動方式，需同步更新 `README.md` 與本文件。
