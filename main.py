@@ -87,42 +87,27 @@ while True:
     # 手部偵測
     frame, hand_landmarks = detector.detect_hands(frame)
 
+    gesture = None
 
-    # 如果有偵測到手
+    # 使用特徵點姿勢邏輯辨識固定手勢，讓控制方式符合目前點餐頁需求。
     if hand_landmarks:
 
-        gesture = None
+        gesture = gesture_logic.detect_gesture(hand_landmarks)
 
-
-        # 左右滑動
-        swipe_gesture = gesture_logic.detect_swipe(hand_landmarks)
-
-        if swipe_gesture:
-
-            gesture = swipe_gesture
-
-            print("Swipe:", gesture)
-
-
-        # 大拇指手勢
-        thumb_gesture = gesture_logic.detect_thumb(hand_landmarks)
-
-        if thumb_gesture:
-
-            gesture = thumb_gesture
-
-            print("Thumb:", gesture)
-
-
-        # 如果有手勢
         if gesture:
 
-            # 發送給 Flask Server
-            sio.emit("gesture", {
+            print("Gesture:", gesture)
 
-                "gesture": gesture
 
-            })
+    # 如果有手勢
+    if gesture:
+
+        # 發送給 Flask Server
+        sio.emit("gesture", {
+
+            "gesture": gesture
+
+        })
 
 
     # 顯示畫面

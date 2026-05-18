@@ -58,7 +58,7 @@
 
 
         <!-- 商品卡片 -->
-        <div class="menu-card burger">
+        <div class="menu-card burger" data-name="牛肉漢堡" data-price="75">
 
             <!-- 商品圖片 -->
             <img src="{{ url_for('static', filename='images/beefburger.png') }}">
@@ -84,7 +84,7 @@
 
 
         <!-- 第二個商品 -->
-        <div class="menu-card burger">
+        <div class="menu-card burger" data-name="炸雞漢堡" data-price="60">
 
             <img src="{{ url_for('static', filename='images/chickenburger.png') }}">
 
@@ -106,7 +106,7 @@
 
 
         <!-- 第三個商品 -->
-        <div class="menu-card drink">
+        <div class="menu-card drink" data-name="可樂" data-price="30">
 
             <img src="{{ url_for('static', filename='images/cola.png') }}">
 
@@ -127,7 +127,7 @@
         </div>
 
         <!-- 第四個商品 -->
-        <div class="menu-card drink">
+        <div class="menu-card drink" data-name="雪碧" data-price="30">
 
             <img src="{{ url_for('static', filename='images/sprite.png') }}">
 
@@ -148,13 +148,13 @@
         </div>
 
         <!-- 第五個商品 -->
-        <div class="menu-card dessert">
+        <div class="menu-card dessert" data-name="冰淇淋" data-price="40">
 
             <img src="{{ url_for('static', filename='images/ice-cream.png') }}">
 
             <h2>冰淇淋</h2>
 
-            <p class="price">$30</p>
+            <p class="price">$40</p>
 
             <div class="control-area">
 
@@ -169,6 +169,28 @@
         </div>
 
     </main>
+
+
+    <!-- 完成購物畫面 -->
+    <section id="checkout-view" class="checkout-view hidden">
+
+        <div class="checkout-panel">
+
+            <h2>完成購物</h2>
+
+            <p id="checkout-message">訂單已建立</p>
+
+            <div id="order-list" class="order-list"></div>
+
+            <p class="checkout-total">
+                總金額：<span id="checkout-total-price">$0</span>
+            </p>
+
+            <button onclick="backToMenu()">返回點餐</button>
+
+        </div>
+
+    </section>
 
 
     <!-- 底部狀態列 -->

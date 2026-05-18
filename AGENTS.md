@@ -27,10 +27,13 @@ gesture-control-system/
 ├─ main.py
 ├─ requirements.txt
 ├─ README.md
-├─ AGENTS.txt
+├─ AGENTS.md
+├─ models/
+│  └─ README.md
 ├─ vision/
 │  ├─ webcam.py
 │  ├─ hand_detector.py
+│  ├─ gesture_model_recognizer.py
 │  └─ gesture_logic.py
 ├─ control/
 │  ├─ focus_mode.py
@@ -74,8 +77,30 @@ gesture-control-system/
 
 - `gesture_logic.py`
   - 將 hand landmarks 轉換為語意化手勢。
-  - 目前包含左右滑動、握拳進入 value mode、拇指加減判斷。
-  - 輸出手勢字串，例如 `LEFT`、`RIGHT`、`PLUS`、`MINUS`。
+  - 目前使用手指特徵點姿勢判斷，不使用 x/y 移動量或預訓練模型作為主要流程。
+  - 食指向左/右對應 `LEFT`、`RIGHT`。
+  - 食指與中指形成劍指向上對應 `PLUS`。
+  - 握拳對應 `MINUS`，用來取代較不穩定的劍指向下。
+  - OK 手勢對應 `SELECT`，手掌全開對應 `BACK`。
+  - 輸出手勢字串，例如 `LEFT`、`RIGHT`、`PLUS`、`MINUS`、`SELECT`、`BACK`。
+
+- `gesture_model_recognizer.py`
+  - 保留給未來 MediaPipe 預訓練 Gesture Recognizer 或自訓練模型使用。
+  - 預設讀取 `models/gesture_recognizer.task`。
+  - 將模型標籤轉換成專案既有手勢字串，例如 `Thumb_Up` 對應 `PLUS`。
+  - 官方預訓練模型沒有左右滑動類別時，可用靜態姿勢暫時對應，例如 `Victory` 對應 `LEFT`、`Open_Palm` 對應 `RIGHT`。
+  - 目前 `main.py` 主要使用 `hand_detector.py` 與 `gesture_logic.py` 的 landmarks 規則判斷。
+
+### `models/`
+
+負責放置預訓練模型或後續自訓練模型。
+
+- `gesture_recognizer.task`
+  - MediaPipe Gesture Recognizer 模型檔。
+  - 此檔案通常是二進位檔，可依需求由官方模型或自訓練模型提供。
+
+- `README.md`
+  - 說明模型檔案放置位置與主程式讀取規則。
 
 ### `control/`
 
@@ -83,7 +108,7 @@ gesture-control-system/
 
 - `focus_mode.py`
   - 維護目前選取項目的 index。
-  - 根據 `LEFT`、`RIGHT`、`PLUS`、`MINUS`、`SELECT` 產生 UI 更新事件。
+  - 根據 `LEFT`、`RIGHT`、`PLUS`、`MINUS`、`SELECT`、`BACK` 產生 UI 更新事件。
   - 回傳格式需維持為物件，例如：
 
 ```python
@@ -113,6 +138,7 @@ gesture-control-system/
 - `static/script.js`
   - 接收 Socket.IO 的 `focus_update`。
   - 更新目前選取卡片、商品數量與總價。
+  - 處理完成購物畫面與返回點餐流程。
 
 - `static/style.css`
   - 前端樣式。
@@ -126,12 +152,14 @@ gesture-control-system/
    - 攝影機、影像處理、手部偵測放在 `vision/`。
    - 手勢對應到控制行為放在 `control/`。
    - Flask route、Socket.IO server 與網頁資源放在 `flask_server/`。
+   - 預訓練或自訓練模型檔放在 `models/`。
    - 程式主啟動流程放在 `main.py`。
 
 2. 如果新增架構，必須保留原本架構：
    - 不要移除既有 `vision/`、`control/`、`flask_server/` 分層。
    - 新功能應以擴充方式加入，例如新增檔案或新增 class。
    - 若需要搬移功能，必須保留相容介面，避免破壞 `main.py`、`app.py`、`script.js` 之間的資料流。
+   - 新增模型辨識時，應保留原本 landmarks 規則作為備援，除非已確認新模型覆蓋所有既有手勢。
 
 3. 不要把不同責任混在同一層：
    - 不要在 `vision/` 直接操作前端 UI。
@@ -162,6 +190,7 @@ gesture-control-system/
    - `PLUS`
    - `MINUS`
    - `SELECT`
+   - `BACK`
 
 5. 新增回傳給前端的資料時，維持 dictionary / JSON 物件格式清楚，並至少包含 `type` 欄位。
 
@@ -186,7 +215,9 @@ gesture-control-system/
 
 - 新增攝影機設定：`vision/webcam.py`
 - 新增手部偵測設定：`vision/hand_detector.py`
+- 新增預訓練模型辨識：`vision/gesture_model_recognizer.py`
 - 新增手勢判斷：`vision/gesture_logic.py`
+- 新增模型檔案：`models/`
 - 新增 focus 類控制：`control/focus_mode.py`
 - 新增滑鼠控制：`control/virtual_mouse.py`
 - 新增其他控制模式：`control/`

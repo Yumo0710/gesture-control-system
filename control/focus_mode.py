@@ -101,6 +101,17 @@ class FocusMode:
             }
 
 
+        # BACK
+        elif gesture == "BACK":
+
+            return {
+
+                "type": "BACK",
+
+                "index": self.current_index
+            }
+
+
         return None
 
 
