@@ -27,6 +27,9 @@ socketio = SocketIO(
 # 建立 Focus Mode
 focus_mode = FocusMode()
 
+# 目前控制模式
+current_mode = "focus"
+
 
 # 首頁
 @app.route('/')
@@ -34,6 +37,36 @@ focus_mode = FocusMode()
 def home():
 
     return render_template("index.html")
+
+
+# 接收前端模式切換
+@socketio.on("mode_change")
+
+def handle_mode_change(data):
+
+    global current_mode
+
+    mode = data.get("mode")
+
+    if mode not in ["focus", "mouse"]:
+
+        return
+
+    current_mode = mode
+
+    print("控制模式切換：", current_mode)
+
+    socketio.emit(
+
+        "mode_changed",
+
+        {
+
+            "mode": current_mode
+
+        }
+
+    )
 
 
 # 接收 AI Client 手勢
@@ -44,7 +77,11 @@ def handle_gesture(data):
     # 取得手勢
     gesture = data["gesture"]
 
-    print("收到手勢:", gesture)
+    print("收到手勢:", gesture, "mode:", current_mode)
+
+    if current_mode != "focus":
+
+        return
 
 
     # 更新 Focus

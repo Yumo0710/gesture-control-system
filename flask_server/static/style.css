@@ -39,6 +39,14 @@ body {
     font-size: 16px;
 }
 
+.mode-bar button.active {
+
+    background-color: darkorange;
+
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+
+}
+
 
 /* 滑鼠移上去 */
 .mode-bar button:hover {

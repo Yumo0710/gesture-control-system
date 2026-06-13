@@ -57,6 +57,10 @@ Control System
 - 判斷目前選中商品
 - 執行點擊操作
 
+已新增 `virtual_mouse_control.py` 範例，可直接使用攝影機手指座標移動 Windows 滑鼠游標。
+
+使用方式：在專案根目錄執行 `python virtual_mouse_control.py`。
+
 此模式目前為後續開發目標。
 
 ## 開發進度

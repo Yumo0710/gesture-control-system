@@ -10,6 +10,7 @@ import socketio
 from vision.webcam import Webcam
 from vision.hand_detector import HandDetector
 from vision.gesture_logic import GestureLogic
+from control.virtual_mouse import VirtualMouse
 
 # Flask
 from flask_server.app import app
@@ -74,6 +75,24 @@ detector = HandDetector()
 # Gesture Logic
 gesture_logic = GestureLogic()
 
+# Virtual Mouse
+virtual_mouse = VirtualMouse()
+
+# 目前控制模式
+current_mode = "focus"
+
+
+# 接收模式變更
+@sio.on("mode_changed")
+
+def on_mode_changed(data):
+
+    global current_mode
+
+    current_mode = data.get("mode", "focus")
+
+    print("接收到模式變更：", current_mode)
+
 
 while True:
 
@@ -91,38 +110,64 @@ while True:
     # 如果有偵測到手
     if hand_landmarks:
 
-        gesture = None
+        if current_mode == "mouse":
+
+            index_finger = hand_landmarks.landmark[8]
+
+            x, y = virtual_mouse.move(index_finger.x, index_finger.y)
+
+            cv2.putText(
+
+                frame,
+
+                f"Mouse: {x},{y}",
+
+                (30, 40),
+
+                cv2.FONT_HERSHEY_SIMPLEX,
+
+                0.8,
+
+                (0, 255, 0),
+
+                2,
+
+            )
+
+        else:
+
+            gesture = None
 
 
-        # 左右滑動
-        swipe_gesture = gesture_logic.detect_swipe(hand_landmarks)
+            # 左右滑動
+            swipe_gesture = gesture_logic.detect_swipe(hand_landmarks)
 
-        if swipe_gesture:
+            if swipe_gesture:
 
-            gesture = swipe_gesture
+                gesture = swipe_gesture
 
-            print("Swipe:", gesture)
-
-
-        # 大拇指手勢
-        thumb_gesture = gesture_logic.detect_thumb(hand_landmarks)
-
-        if thumb_gesture:
-
-            gesture = thumb_gesture
-
-            print("Thumb:", gesture)
+                print("Swipe:", gesture)
 
 
-        # 如果有手勢
-        if gesture:
+            # 大拇指手勢
+            thumb_gesture = gesture_logic.detect_thumb(hand_landmarks)
 
-            # 發送給 Flask Server
-            sio.emit("gesture", {
+            if thumb_gesture:
 
-                "gesture": gesture
+                gesture = thumb_gesture
 
-            })
+                print("Thumb:", gesture)
+
+
+            # 如果有手勢
+            if gesture:
+
+                # 發送給 Flask Server
+                sio.emit("gesture", {
+
+                    "gesture": gesture
+
+                })
 
 
     # 顯示畫面

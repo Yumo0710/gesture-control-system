@@ -90,7 +90,35 @@ function setMode(mode) {
     controlMode = mode;
 
     document.getElementById('mode-text').innerText =
-        controlMode;
+        controlMode === 'focus' ? 'Focus' : 'Mouse';
+
+    socket.emit('mode_change', {
+
+        mode: controlMode
+
+    });
+
+    updateModeButtons();
+}
+
+
+function updateModeButtons() {
+
+    const buttons = document.querySelectorAll('.mode-bar button');
+
+    buttons.forEach(button => {
+
+        if (button.innerText.toLowerCase().includes(controlMode)) {
+
+            button.classList.add('active');
+
+        } else {
+
+            button.classList.remove('active');
+
+        }
+
+    });
 }
 
 
@@ -135,6 +163,22 @@ function decreaseCurrent() {
 
     minusButton.click();
 }
+
+
+// 接收模式更新
+socket.on("mode_changed", function(data) {
+
+    controlMode = data.mode;
+
+    document.getElementById('mode-text').innerText =
+        controlMode === 'focus' ? 'Focus' : 'Mouse';
+
+    document.getElementById('status-text').innerText =
+        controlMode === 'focus' ? 'Focus mode enabled' : 'Mouse mode enabled';
+
+    updateModeButtons();
+
+});
 
 
 // 接收 Focus 更新
