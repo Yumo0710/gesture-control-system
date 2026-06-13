@@ -30,10 +30,11 @@ class HandDetector:
 
                 hand_landmarks = landmarks
 
-                self.mp_draw.draw_landmarks(
-                    frame,
-                    landmarks,
-                    self.mp_hands.HAND_CONNECTIONS
-                )
+                # Draw only small keypoint circles (no connecting lines)
+                h, w = frame.shape[:2]
+                for lm in landmarks.landmark:
+                    px = int(lm.x * w)
+                    py = int(lm.y * h)
+                    cv2.circle(frame, (px, py), 4, (255, 255, 255), -1)
 
         return frame, hand_landmarks
