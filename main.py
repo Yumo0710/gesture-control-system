@@ -142,8 +142,24 @@ while True:
             p = hand_landmarks.landmark[8]
             nx, ny = p.x, p.y
 
-        # 顯示歸一化座標在左上
-        cv2.putText(frame, f"x:{nx:.2f} y:{ny:.2f}", (10, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        # 以畫面中心為原點的座標 (中心 = 0.00,0.00)
+        ox = nx - 0.5
+        oy = ny - 0.5
+
+        # 顯示中心座標在左上，並畫中心十字與從中心到掌心的指示線
+        cv2.putText(frame, f"cx:{ox:+.2f} cy:{oy:+.2f}", (10, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
+        h, w = frame.shape[:2]
+        cx_px = int(w * 0.5)
+        cy_px = int(h * 0.5)
+        palm_px = (int(nx * w), int(ny * h))
+
+        # center crosshair
+        cv2.line(frame, (cx_px - 10, cy_px), (cx_px + 10, cy_px), (200, 200, 200), 1)
+        cv2.line(frame, (cx_px, cy_px - 10), (cx_px, cy_px + 10), (200, 200, 200), 1)
+
+        # line from center to palm
+        cv2.line(frame, (cx_px, cy_px), palm_px, (0, 255, 255), 1)
 
         if current_mode == "mouse":
             # center-based offset (-0.5 .. 0.5)

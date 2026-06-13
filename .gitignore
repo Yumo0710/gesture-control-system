@@ -1,6 +1,7 @@
 # Python cache
 __pycache__/
 *.py[cod]
+*.pyc
 
 # OS files
 .DS_Store
@@ -8,10 +9,11 @@ Thumbs.db
 
 # Virtual environments
 venv/
-.venv311/
 ENV/
+.venv311/
 .env
 
-# Generated/temporary model and workspace files
-vision_models/
+# Generated and downloaded artifacts
 models/
+vision_models/
+status.txt
