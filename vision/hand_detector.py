@@ -4,8 +4,8 @@ import mediapipe as mp
 
 class HandDetector:
 
-    def __init__(self):
-
+    def __init__(self, require_mediapipe: bool = True):
+        # Parameter kept for compatibility; always use mp.solutions.hands here.
         self.mp_hands = mp.solutions.hands
 
         self.hands = self.mp_hands.Hands(
