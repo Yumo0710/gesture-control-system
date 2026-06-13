@@ -97,24 +97,6 @@ virtual_mouse = VirtualMouse()
 current_mode = "focus"
 
 
-def cleanup():
-    try:
-        if sio_connected:
-            sio.disconnect()
-    except Exception:
-        pass
-
-    try:
-        webcam.release()
-    except Exception:
-        pass
-
-    try:
-        cv2.destroyAllWindows()
-    except Exception:
-        pass
-
-
 # 接收模式變更
 @sio.on("mode_changed")
 
@@ -127,122 +109,110 @@ def on_mode_changed(data):
     print("接收到模式變更：", current_mode)
 
 
-try:
-    while True:
+while True:
 
-        # 取得畫面
-        frame = webcam.get_frame()
+    # 取得畫面
+    frame = webcam.get_frame()
 
-        if frame is None:
+    if frame is None:
+        break
+
+
+    # 手部偵測
+    frame, hand_landmarks = detector.detect_hands(frame)
+
+
+    # 如果有偵測到手，先計算 palm center (nx, ny)，並在左上顯示 xy
+    if hand_landmarks:
+        # Compute palm center from landmarks when available.
+        palm_indices = [0, 1, 2, 5, 9, 13, 17]
+
+        xs = []
+        ys = []
+        for i in palm_indices:
+            if i < len(hand_landmarks.landmark):
+                xs.append(hand_landmarks.landmark[i].x)
+                ys.append(hand_landmarks.landmark[i].y)
+
+        if xs and ys:
+            nx = sum(xs) / len(xs)
+            ny = sum(ys) / len(ys)
+        else:
+            # fallback to index tip
+            p = hand_landmarks.landmark[8]
+            nx, ny = p.x, p.y
+
+        # 顯示歸一化座標在左上
+        cv2.putText(frame, f"x:{nx:.2f} y:{ny:.2f}", (10, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
+        if current_mode == "mouse":
+            # center-based offset (-0.5 .. 0.5)
+            ox = nx - 0.5
+            oy = ny - 0.5
+
+            # deadzone (no movement when close to center)
+            deadzone = 0.12
+
+            # max pixels per frame
+            max_speed = 80
+
+            def compute_speed(offset):
+                mag = abs(offset) - deadzone
+                if mag <= 0:
+                    return 0
+                norm = mag / (0.5 - deadzone)
+                norm = max(0.0, min(1.0, norm))
+                return norm * max_speed * (1 if offset > 0 else -1)
+
+            dx = compute_speed(ox)
+            dy = compute_speed(oy)
+
+            # apply movement (note: positive oy -> palm below center -> move down)
+            x, y = virtual_mouse.move_by(dx, dy)
+
+            cv2.putText(frame, f"Vel: {int(dx)},{int(dy)}", (30, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+
+        else:
+            gesture = None
+
+            # 左右滑動
+            swipe_gesture = gesture_logic.detect_swipe(hand_landmarks)
+
+            if swipe_gesture:
+                gesture = swipe_gesture
+                print("Swipe:", gesture)
+
+            # 大拇指手勢
+            thumb_gesture = gesture_logic.detect_thumb(hand_landmarks)
+
+            if thumb_gesture:
+                gesture = thumb_gesture
+                print("Thumb:", gesture)
+
+            # 如果有手勢
+            if gesture:
+                # 發送給 Flask Server
+                sio.emit("gesture", {"gesture": gesture})
+
+
+    # 顯示畫面
+    cv2.imshow("Webcam", frame)
+
+    # 如果視窗被關閉，跳出迴圈
+    try:
+        if cv2.getWindowProperty("Webcam", cv2.WND_PROP_VISIBLE) < 1:
             break
+    except Exception:
+        pass
+
+    # Q 或 Esc 離開
+    k = cv2.waitKey(1)
+    if k != -1 and (k & 0xFF == ord('q') or k & 0xFF == 27):
+        break
 
 
-        # 手部偵測
-        frame, hand_landmarks = detector.detect_hands(frame)
+# 關閉 Webcam
+webcam.release()
 
-
-        # 如果有偵測到手
-        if hand_landmarks:
-            if current_mode == "mouse":
-                # Compute palm center from landmarks when available.
-                # Use landmarks indices that represent the palm/wrist area.
-                palm_indices = [0, 1, 2, 5, 9, 13, 17]
-
-                xs = []
-                ys = []
-                for i in palm_indices:
-                    if i < len(hand_landmarks.landmark):
-                        xs.append(hand_landmarks.landmark[i].x)
-                        ys.append(hand_landmarks.landmark[i].y)
-
-                if xs and ys:
-                    nx = sum(xs) / len(xs)
-                    ny = sum(ys) / len(ys)
-                else:
-                    # fallback to index tip
-                    p = hand_landmarks.landmark[8]
-                    nx, ny = p.x, p.y
-
-                # center-based offset (-0.5 .. 0.5)
-                ox = nx - 0.5
-                oy = ny - 0.5
-
-                # deadzone (no movement when close to center)
-                deadzone = 0.12
-
-                # max pixels per frame
-                max_speed = 80
-
-                def compute_speed(offset):
-                    mag = abs(offset) - deadzone
-                    if mag <= 0:
-                        return 0
-                    norm = mag / (0.5 - deadzone)
-                    norm = max(0.0, min(1.0, norm))
-                    return norm * max_speed * (1 if offset > 0 else -1)
-
-                dx = compute_speed(ox)
-                dy = compute_speed(oy)
-
-                # apply movement (note: positive oy -> palm below center -> move down)
-                x, y = virtual_mouse.move_by(dx, dy)
-
-                cv2.putText(frame, f"Vel: {int(dx)},{int(dy)}", (30, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-
-            else:
-
-                gesture = None
-
-
-                # 左右滑動
-                swipe_gesture = gesture_logic.detect_swipe(hand_landmarks)
-
-                if swipe_gesture:
-
-                    gesture = swipe_gesture
-
-                    print("Swipe:", gesture)
-
-
-                # 大拇指手勢
-                thumb_gesture = gesture_logic.detect_thumb(hand_landmarks)
-
-                if thumb_gesture:
-
-                    gesture = thumb_gesture
-
-                    print("Thumb:", gesture)
-
-
-                # 如果有手勢
-                if gesture:
-
-                    # 發送給 Flask Server
-                    sio.emit("gesture", {
-
-                        "gesture": gesture
-
-                    })
-
-
-        # 顯示畫面
-        cv2.imshow("Webcam", frame)
-
-        # 如果視窗被關閉，跳出迴圈
-        try:
-            if cv2.getWindowProperty("Webcam", cv2.WND_PROP_VISIBLE) < 1:
-                break
-        except Exception:
-            pass
-
-        # Q 或 Esc 離開
-        k = cv2.waitKey(1)
-        if k != -1 and (k & 0xFF == ord('q') or k & 0xFF == 27):
-            break
-
-except KeyboardInterrupt:
-    print("Keyboard interrupt received, exiting...")
-except Exception as e:
-    print("Unexpected error:", e)
-finally:
-    cleanup()
+# 關閉 OpenCV
+cv2.destroyAllWindows()
