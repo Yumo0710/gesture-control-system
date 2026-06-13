@@ -5,18 +5,28 @@ import mediapipe as mp
 class HandDetector:
 
     def __init__(self, require_mediapipe: bool = True):
-        # Parameter kept for compatibility; always use mp.solutions.hands here.
-        self.mp_hands = mp.solutions.hands
+        # Try to use MediaPipe solutions; if not available, disable detector gracefully.
+        try:
+            self.mp_hands = mp.solutions.hands
 
-        self.hands = self.mp_hands.Hands(
-            max_num_hands=1,
-            min_detection_confidence=0.7,
-            min_tracking_confidence=0.7
-        )
+            self.hands = self.mp_hands.Hands(
+                max_num_hands=1,
+                min_detection_confidence=0.7,
+                min_tracking_confidence=0.7
+            )
 
-        self.mp_draw = mp.solutions.drawing_utils
+            self.mp_draw = mp.solutions.drawing_utils
+        except Exception as e:
+            print(f"mediapipe 'solutions' not available: {e}. Hand detection disabled.")
+            self.mp_hands = None
+            self.hands = None
+            self.mp_draw = None
 
     def detect_hands(self, frame):
+
+        # If MediaPipe is not available, return frame without landmarks.
+        if self.hands is None:
+            return frame, None
 
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
