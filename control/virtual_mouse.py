@@ -1,4 +1,5 @@
 import ctypes
+from ctypes import wintypes
 
 
 class VirtualMouse:
@@ -23,6 +24,28 @@ class VirtualMouse:
         else:
             self.current_x += int((target_x - self.current_x) * self.smoothing)
             self.current_y += int((target_y - self.current_y) * self.smoothing)
+
+        self.user32.SetCursorPos(self.current_x, self.current_y)
+        return self.current_x, self.current_y
+
+    def move_by(self, dx, dy):
+        """Move cursor by pixel delta (dx, dy)."""
+        if self.current_x is None or self.current_y is None:
+            # initialize to current system cursor
+            pt = ctypes.wintypes.POINT()
+            try:
+                ctypes.windll.user32.GetCursorPos(ctypes.byref(pt))
+                self.current_x, self.current_y = pt.x, pt.y
+            except Exception:
+                self.current_x = int(self.screen_width / 2)
+                self.current_y = int(self.screen_height / 2)
+
+        self.current_x += int(dx)
+        self.current_y += int(dy)
+
+        # clamp
+        self.current_x = max(0, min(self.screen_width - 1, self.current_x))
+        self.current_y = max(0, min(self.screen_height - 1, self.current_y))
 
         self.user32.SetCursorPos(self.current_x, self.current_y)
         return self.current_x, self.current_y

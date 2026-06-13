@@ -8,5 +8,10 @@ Thumbs.db
 
 # Virtual environments
 venv/
+.venv311/
 ENV/
 .env
+
+# Generated/temporary model and workspace files
+vision_models/
+models/

@@ -54,13 +54,23 @@ sio = socketio.Client()
 
 
 # 連接 Flask Server
-sio.connect(
-
-    "http://localhost:5000",
-
-    transports=['websocket']
-
-)
+sio_connected = False
+try:
+    sio.connect(
+        "http://localhost:5000",
+        transports=['websocket']
+    )
+    sio_connected = True
+    print("SocketIO connected via websocket")
+except Exception as e:
+    print("WebSocket transport failed, falling back to polling:", e)
+    try:
+        sio.connect("http://localhost:5000")
+        sio_connected = True
+        print("SocketIO connected via polling")
+    except Exception as e2:
+        print("SocketIO connection failed:", e2)
+        raise
 
 
 print("已連接 Flask Server")
@@ -70,7 +80,12 @@ print("已連接 Flask Server")
 webcam = Webcam()
 
 # Hand Detector
-detector = HandDetector()
+try:
+    detector = HandDetector(require_mediapipe=True)
+except ImportError as e:
+    print(e)
+    print('MediaPipe Hands not available; falling back to OpenCV detector.')
+    detector = HandDetector(require_mediapipe=False)
 
 # Gesture Logic
 gesture_logic = GestureLogic()
@@ -109,30 +124,51 @@ while True:
 
     # 如果有偵測到手
     if hand_landmarks:
-
         if current_mode == "mouse":
+            # Compute palm center from landmarks when available.
+            # Use landmarks indices that represent the palm/wrist area.
+            palm_indices = [0, 1, 2, 5, 9, 13, 17]
 
-            index_finger = hand_landmarks.landmark[8]
+            xs = []
+            ys = []
+            for i in palm_indices:
+                if i < len(hand_landmarks.landmark):
+                    xs.append(hand_landmarks.landmark[i].x)
+                    ys.append(hand_landmarks.landmark[i].y)
 
-            x, y = virtual_mouse.move(index_finger.x, index_finger.y)
+            if xs and ys:
+                nx = sum(xs) / len(xs)
+                ny = sum(ys) / len(ys)
+            else:
+                # fallback to index tip
+                p = hand_landmarks.landmark[8]
+                nx, ny = p.x, p.y
 
-            cv2.putText(
+            # center-based offset (-0.5 .. 0.5)
+            ox = nx - 0.5
+            oy = ny - 0.5
 
-                frame,
+            # deadzone (no movement when close to center)
+            deadzone = 0.12
 
-                f"Mouse: {x},{y}",
+            # max pixels per frame
+            max_speed = 80
 
-                (30, 40),
+            def compute_speed(offset):
+                mag = abs(offset) - deadzone
+                if mag <= 0:
+                    return 0
+                norm = mag / (0.5 - deadzone)
+                norm = max(0.0, min(1.0, norm))
+                return norm * max_speed * (1 if offset > 0 else -1)
 
-                cv2.FONT_HERSHEY_SIMPLEX,
+            dx = compute_speed(ox)
+            dy = compute_speed(oy)
 
-                0.8,
+            # apply movement (note: positive oy -> palm below center -> move down)
+            x, y = virtual_mouse.move_by(dx, dy)
 
-                (0, 255, 0),
-
-                2,
-
-            )
+            cv2.putText(frame, f"Vel: {int(dx)},{int(dy)}", (30, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 
         else:
 
@@ -173,9 +209,16 @@ while True:
     # 顯示畫面
     cv2.imshow("Webcam", frame)
 
+    # 如果視窗被關閉，跳出迴圈
+    try:
+        if cv2.getWindowProperty("Webcam", cv2.WND_PROP_VISIBLE) < 1:
+            break
+    except Exception:
+        pass
 
-    # Q 離開
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    # Q 或 Esc 離開
+    k = cv2.waitKey(1)
+    if k != -1 and (k & 0xFF == ord('q') or k & 0xFF == 27):
         break
 
 
