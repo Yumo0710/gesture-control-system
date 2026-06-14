@@ -1,107 +1,62 @@
-# Flask
 from flask import Flask, render_template
-
-# SocketIO
 from flask_socketio import SocketIO
 
-# Focus Mode
 from control.focus_mode import FocusMode
 
 
-# 建立 Flask
+# 建立 Flask 應用，專門提供菜單頁面與 Socket.IO 事件。
 app = Flask(__name__)
 
 
-# 建立 SocketIO
+# 使用 threading 模式，避免專題展示時還需要額外安裝 eventlet/gevent。
 socketio = SocketIO(
-
     app,
-
-    async_mode='threading',
-
-    cors_allowed_origins="*"
-
+    async_mode="threading",
+    cors_allowed_origins="*",
 )
 
 
-# 建立 Focus Mode
-focus_mode = FocusMode()
+# FocusMode 負責管理目前選取的餐點與增減數量事件。
+focus_mode = FocusMode(item_count=5)
 
-# 目前控制模式
+# 目前系統模式：focus 控制菜單，mouse 控制滑鼠。
 current_mode = "focus"
 
 
-# 首頁
-@app.route('/')
-
+@app.route("/")
 def home():
-
+    # 回傳主要操作頁面，前端會透過 Socket.IO 接收手勢更新。
     return render_template("index.html")
 
 
-# 接收前端模式切換
 @socketio.on("mode_change")
-
 def handle_mode_change(data):
-
     global current_mode
 
     mode = data.get("mode")
-
     if mode not in ["focus", "mouse"]:
-
         return
 
     current_mode = mode
-
-    print("控制模式切換：", current_mode)
-
-    socketio.emit(
-
-        "mode_changed",
-
-        {
-
-            "mode": current_mode
-
-        }
-
-    )
+    print("控制模式已切換:", current_mode)
+    socketio.emit("mode_changed", {"mode": current_mode})
 
 
-# 接收 AI Client 手勢
 @socketio.on("gesture")
-
 def handle_gesture(data):
-
-    # 取得手勢
-    gesture = data["gesture"]
+    # 接收主程式送來的手勢結果，只有 Focus Mode 會更新網頁菜單。
+    gesture = data.get("gesture")
+    if not gesture:
+        return
 
     print("收到手勢:", gesture, "mode:", current_mode)
-
     if current_mode != "focus":
-
         return
 
-
-    # 更新 Focus
+    # 將手勢轉成 Focus Mode 的 UI 更新指令。
     result = focus_mode.update(gesture)
-
-
-    # 如果沒有事件
     if result is None:
-
         return
 
-
-    print("事件:", result)
-
-
-    # 傳送給前端
-    socketio.emit(
-
-        "focus_update",
-
-        result
-
-    )
+    print("Focus 更新:", result)
+    socketio.emit("focus_update", result)
