@@ -41,6 +41,9 @@ class FocusMode:
         if gesture == "SELECT":
             return {"type": "SELECT", "index": self.current_index}
 
+        if gesture == "CHECKOUT":
+            return {"type": "CHECKOUT", "index": self.current_index}
+
         return None
 
     def get_index(self):

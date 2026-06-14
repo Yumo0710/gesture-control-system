@@ -175,7 +175,11 @@ def main():
 
                 cv2.putText(frame, f"Vel: {int(dx)},{int(dy)}", (30, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
             else:
-                gesture = gesture_logic.detect_swipe(hand_landmarks) or gesture_logic.detect_thumb(hand_landmarks)
+                # Focus Mode 先判斷 OK 確認餐點，再判斷四方向滑動操作。
+                if gesture_logic.detect_ok_gesture(hand_landmarks):
+                    gesture = "CHECKOUT"
+                else:
+                    gesture = gesture_logic.detect_swipe(hand_landmarks)
                 if gesture:
                     print("Gesture:", gesture)
                     sio.emit("gesture", {"gesture": gesture})

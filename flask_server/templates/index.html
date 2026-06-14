@@ -5,23 +5,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gesture Menu System</title>
-    <!-- 載入前端樣式，讓模式切換、菜單與教學區保持清楚分區。 -->
+    <!-- 載入前端樣式，讓模式切換、菜單、教學與訂單明細維持清楚分區。 -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
-    <!-- 頁首說明專題用途，展示時能快速看出目前是手勢點餐系統。 -->
+    <!-- 頁首只保留專題名稱與目前操作目標，避免干擾菜單使用。 -->
     <header class="header">
         <h1>Gesture Menu System</h1>
-        <p>使用手勢切換餐點、調整數量與控制滑鼠</p>
+        <p>使用手勢切換餐點、調整數量，第一次 OK 查看明細，第二次 OK 送出訂單。</p>
     </header>
 
-    <!-- 模式切換保留按鈕，方便測試；正式展示也可用手勢切換。 -->
+    <!-- 模式切換區保留按鈕與手勢提示，方便測試時用鍵盤或手勢切換。 -->
     <section class="mode-panel" aria-label="控制模式">
         <div>
             <p class="section-label">控制模式</p>
-            <h2>選擇操作方式</h2>
-            <p class="mode-hint">張開手掌並停住約 1 秒可切換模式，也可點按鈕或按 F / M。</p>
+            <h2>目前模式：<span id="mode-text">Focus</span></h2>
+            <p class="mode-hint">張開手掌停留 1 秒可切換模式，也可以按 F / M 測試。</p>
         </div>
         <div class="mode-bar">
             <button type="button" data-mode="focus" onclick="setMode('focus')">Focus Mode</button>
@@ -29,7 +29,7 @@
         </div>
     </section>
 
-    <!-- 分類篩選只影響畫面顯示，不改變後端 FocusMode 的索引狀態。 -->
+    <!-- 分類按鈕只影響畫面顯示，不改變後端 Focus 索引順序。 -->
     <section class="category-bar" aria-label="餐點分類">
         <button type="button" onclick="showCategory('all')">全部</button>
         <button type="button" onclick="showCategory('burger')">漢堡</button>
@@ -38,97 +38,105 @@
     </section>
 
     <main class="page-layout">
-        <!-- 菜單項目共有 5 個，需與 control/focus_mode.py 的 max_index 對齊。 -->
-        <section class="menu-container" aria-label="菜單">
-            <div class="menu-card burger">
-                <!-- 圖片由 Flask static 路徑載入，避免部署時找不到素材。 -->
-                <img src="{{ url_for('static', filename='images/beefburger.png') }}" alt="牛肉漢堡">
-                <h2>牛肉漢堡</h2>
-                <p class="price">$75</p>
-                <div class="control-area">
-                    <button type="button" onclick="decrease(this, 75)">-</button>
-                    <span class="quantity">0</span>
-                    <button type="button" onclick="increase(this, 75)">+</button>
+        <div class="order-column">
+            <!-- Focus Mode 只在這 5 張餐點卡片之間移動，不把確認按鈕混入餐點循環。 -->
+            <section class="menu-container" aria-label="菜單">
+                <div class="menu-card burger selectable-item" data-name="牛肉漢堡" data-price="75">
+                    <img src="{{ url_for('static', filename='images/beefburger.png') }}" alt="牛肉漢堡">
+                    <h2>牛肉漢堡</h2>
+                    <p class="price">$75</p>
+                    <div class="control-area">
+                        <button type="button" onclick="decrease(this, 75)">-</button>
+                        <span class="quantity">0</span>
+                        <button type="button" onclick="increase(this, 75)">+</button>
+                    </div>
                 </div>
-            </div>
 
-            <div class="menu-card burger">
-                <img src="{{ url_for('static', filename='images/chickenburger.png') }}" alt="雞肉漢堡">
-                <h2>雞肉漢堡</h2>
-                <p class="price">$60</p>
-                <div class="control-area">
-                    <button type="button" onclick="decrease(this, 60)">-</button>
-                    <span class="quantity">0</span>
-                    <button type="button" onclick="increase(this, 60)">+</button>
+                <div class="menu-card burger selectable-item" data-name="雞肉漢堡" data-price="60">
+                    <img src="{{ url_for('static', filename='images/chickenburger.png') }}" alt="雞肉漢堡">
+                    <h2>雞肉漢堡</h2>
+                    <p class="price">$60</p>
+                    <div class="control-area">
+                        <button type="button" onclick="decrease(this, 60)">-</button>
+                        <span class="quantity">0</span>
+                        <button type="button" onclick="increase(this, 60)">+</button>
+                    </div>
                 </div>
-            </div>
 
-            <div class="menu-card drink">
-                <img src="{{ url_for('static', filename='images/cola.png') }}" alt="可樂">
-                <h2>可樂</h2>
-                <p class="price">$30</p>
-                <div class="control-area">
-                    <button type="button" onclick="decrease(this, 30)">-</button>
-                    <span class="quantity">0</span>
-                    <button type="button" onclick="increase(this, 30)">+</button>
+                <div class="menu-card drink selectable-item" data-name="可樂" data-price="30">
+                    <img src="{{ url_for('static', filename='images/cola.png') }}" alt="可樂">
+                    <h2>可樂</h2>
+                    <p class="price">$30</p>
+                    <div class="control-area">
+                        <button type="button" onclick="decrease(this, 30)">-</button>
+                        <span class="quantity">0</span>
+                        <button type="button" onclick="increase(this, 30)">+</button>
+                    </div>
                 </div>
-            </div>
 
-            <div class="menu-card drink">
-                <img src="{{ url_for('static', filename='images/sprite.png') }}" alt="雪碧">
-                <h2>雪碧</h2>
-                <p class="price">$30</p>
-                <div class="control-area">
-                    <button type="button" onclick="decrease(this, 30)">-</button>
-                    <span class="quantity">0</span>
-                    <button type="button" onclick="increase(this, 30)">+</button>
+                <div class="menu-card drink selectable-item" data-name="雪碧" data-price="30">
+                    <img src="{{ url_for('static', filename='images/sprite.png') }}" alt="雪碧">
+                    <h2>雪碧</h2>
+                    <p class="price">$30</p>
+                    <div class="control-area">
+                        <button type="button" onclick="decrease(this, 30)">-</button>
+                        <span class="quantity">0</span>
+                        <button type="button" onclick="increase(this, 30)">+</button>
+                    </div>
                 </div>
-            </div>
 
-            <div class="menu-card dessert">
-                <img src="{{ url_for('static', filename='images/ice-cream.png') }}" alt="冰淇淋">
-                <h2>冰淇淋</h2>
-                <p class="price">$30</p>
-                <div class="control-area">
-                    <button type="button" onclick="decrease(this, 30)">-</button>
-                    <span class="quantity">0</span>
-                    <button type="button" onclick="increase(this, 30)">+</button>
+                <div class="menu-card dessert selectable-item" data-name="冰淇淋" data-price="30">
+                    <img src="{{ url_for('static', filename='images/ice-cream.png') }}" alt="冰淇淋">
+                    <h2>冰淇淋</h2>
+                    <p class="price">$30</p>
+                    <div class="control-area">
+                        <button type="button" onclick="decrease(this, 30)">-</button>
+                        <span class="quantity">0</span>
+                        <button type="button" onclick="increase(this, 30)">+</button>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- 教學區優先使用手勢貼圖；鍵盤與 UI 不是手勢，因此保留文字徽章。 -->
-        <aside class="gesture-guide" aria-label="操作教學">
-            <p class="section-label">操作教學</p>
+            <!-- 確認餐點獨立放在菜單下方，第一次 OK 開明細，第二次 OK 送出訂單。 -->
+            <section class="checkout-section" aria-label="確認餐點">
+                <button type="button" id="checkout-button" class="checkout-card" onclick="handleCheckoutConfirm()">
+                    確認餐點
+                    <span>第一次 OK 開明細，第二次 OK 送出訂單</span>
+                </button>
+            </section>
+        </div>
+
+        <!-- 手勢教學使用對應貼圖，沒有合適貼圖才使用文字徽章。 -->
+        <aside class="gesture-guide" aria-label="手勢教學">
+            <p class="section-label">手勢教學</p>
 
             <h2>切換模式</h2>
             <ul>
                 <li>
                     <img class="gesture-sticker" src="{{ url_for('static', filename='images/gestures/open_palm.svg') }}" alt="張開手掌">
-                    <span class="gesture-text">張開手掌停住 1 秒：切換模式</span>
+                    <span class="gesture-text">張開手掌停留 1 秒：切換模式</span>
                 </li>
-                <li><span class="gesture-badge">F</span><span class="gesture-text">按 F：切到 Focus Mode</span></li>
-                <li><span class="gesture-badge">M</span><span class="gesture-text">按 M：切到 Virtual Mouse</span></li>
-                <li><span class="gesture-badge">UI</span><span class="gesture-text">點上方按鈕：手動切換模式</span></li>
+                <li><span class="gesture-badge">F</span><span class="gesture-text">按 F：Focus Mode</span></li>
+                <li><span class="gesture-badge">M</span><span class="gesture-text">按 M：Virtual Mouse</span></li>
             </ul>
 
             <h2>Focus Mode</h2>
             <ul>
                 <li>
-                    <img class="gesture-sticker" src="{{ url_for('static', filename='images/gestures/swipe_lr.svg') }}" alt="左右揮動">
-                    <span class="gesture-text">左右揮動：切換餐點</span>
+                    <img class="gesture-sticker" src="{{ url_for('static', filename='images/gestures/swipe_lr.svg') }}" alt="左右滑">
+                    <span class="gesture-text">左右滑：切換餐點</span>
                 </li>
                 <li>
-                    <img class="gesture-sticker" src="{{ url_for('static', filename='images/gestures/fist.svg') }}" alt="握拳">
-                    <span class="gesture-text">握拳：進入數量調整</span>
+                    <img class="gesture-sticker" src="{{ url_for('static', filename='images/gestures/swipe_up.svg') }}" alt="上滑">
+                    <span class="gesture-text">上滑：增加數量</span>
                 </li>
                 <li>
-                    <img class="gesture-sticker" src="{{ url_for('static', filename='images/gestures/thumb_up.svg') }}" alt="拇指向上">
-                    <span class="gesture-text">拇指向上：增加數量</span>
+                    <img class="gesture-sticker" src="{{ url_for('static', filename='images/gestures/swipe_down.svg') }}" alt="下滑">
+                    <span class="gesture-text">下滑：減少數量</span>
                 </li>
                 <li>
-                    <img class="gesture-sticker" src="{{ url_for('static', filename='images/gestures/thumb_down.svg') }}" alt="拇指向下">
-                    <span class="gesture-text">拇指向下：減少數量</span>
+                    <img class="gesture-sticker" src="{{ url_for('static', filename='images/gestures/ok.svg') }}" alt="OK 手勢">
+                    <span class="gesture-text">OK 手勢：第一次開明細，第二次送出訂單</span>
                 </li>
             </ul>
 
@@ -136,7 +144,7 @@
             <ul>
                 <li>
                     <img class="gesture-sticker" src="{{ url_for('static', filename='images/gestures/move_palm.svg') }}" alt="手掌移動">
-                    <span class="gesture-text">手掌離中心：移動游標</span>
+                    <span class="gesture-text">手掌偏移：控制滑鼠游標</span>
                 </li>
                 <li>
                     <img class="gesture-sticker" src="{{ url_for('static', filename='images/gestures/click_thumb.svg') }}" alt="拇指點擊">
@@ -146,15 +154,36 @@
         </aside>
     </main>
 
-    <!-- 底部狀態列顯示目前模式、最近動作與總金額。 -->
+    <!-- 訂單明細彈窗保留在頁面中，確認餐點時直接填入目前數量。 -->
+    <div id="order-modal" class="modal-overlay" hidden>
+        <section class="order-modal" role="dialog" aria-modal="true" aria-labelledby="order-title">
+            <div class="modal-header">
+                <div>
+                    <p class="section-label">訂單明細</p>
+                    <h2 id="order-title">確認餐點</h2>
+                </div>
+                <button type="button" class="icon-button" onclick="closeOrderModal()" aria-label="關閉明細">×</button>
+            </div>
+            <div id="order-list" class="order-list"></div>
+            <div class="order-total-row">
+                <span>總金額</span>
+                <strong id="modal-total-price">$0</strong>
+            </div>
+            <div class="modal-actions">
+                <button type="button" onclick="closeOrderModal()">返回修改</button>
+                <button type="button" class="primary-action" onclick="confirmOrder()">送出訂單</button>
+            </div>
+        </section>
+    </div>
+
     <footer class="footer">
         <div>
-            <p>控制模式</p>
-            <p id="mode-text">Focus</p>
+            <p>目前模式</p>
+            <p id="footer-mode-text">Focus</p>
         </div>
         <div>
-            <p>目前狀態</p>
-            <p id="status-text">等待手勢...</p>
+            <p>操作狀態</p>
+            <p id="status-text">準備偵測手勢...</p>
         </div>
         <div>
             <p>總金額</p>
@@ -162,9 +191,7 @@
         </div>
     </footer>
 
-    <!-- Socket.IO 用於同步 Python 後端送來的模式與手勢事件。 -->
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
-    <!-- 載入前端互動邏輯。 -->
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 

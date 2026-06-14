@@ -37,6 +37,21 @@ def make_fist():
     return hand
 
 
+def make_ok_gesture():
+    hand = make_hand()
+    # OK 手勢：拇指與食指靠近，其餘三指伸直。
+    hand.landmark[4].x = 0.50
+    hand.landmark[4].y = 0.50
+    hand.landmark[8].x = 0.53
+    hand.landmark[8].y = 0.51
+
+    for tip, joint in [(12, 10), (16, 14), (20, 18)]:
+        hand.landmark[tip].y = 0.25
+        hand.landmark[joint].y = 0.42
+
+    return hand
+
+
 class GestureLogicTests(unittest.TestCase):
     def test_open_palm_detection(self):
         logic = GestureLogic()
@@ -61,6 +76,37 @@ class GestureLogicTests(unittest.TestCase):
         logic.last_trigger_time = 0
         hand.landmark[8].x = 0.45
         self.assertEqual(logic.detect_swipe(hand), "RIGHT")
+
+    def test_focus_swipe_up_is_plus(self):
+        logic = GestureLogic()
+        hand = make_hand()
+
+        hand.landmark[8].y = 0.55
+        self.assertIsNone(logic.detect_swipe(hand))
+
+        logic.last_trigger_time = 0
+        hand.landmark[8].y = 0.40
+        self.assertEqual(logic.detect_swipe(hand), "PLUS")
+
+    def test_focus_swipe_down_is_minus(self):
+        logic = GestureLogic()
+        hand = make_hand()
+
+        hand.landmark[8].y = 0.40
+        self.assertIsNone(logic.detect_swipe(hand))
+
+        logic.last_trigger_time = 0
+        hand.landmark[8].y = 0.55
+        self.assertEqual(logic.detect_swipe(hand), "MINUS")
+
+    def test_ok_gesture_confirms_checkout(self):
+        logic = GestureLogic()
+
+        self.assertTrue(logic.detect_ok_gesture(make_ok_gesture()))
+        self.assertFalse(logic.detect_ok_gesture(make_ok_gesture()))
+
+        logic.last_trigger_time = 0
+        self.assertFalse(logic.detect_ok_gesture(make_open_palm()))
 
 
 if __name__ == "__main__":

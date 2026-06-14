@@ -16,7 +16,7 @@ socketio = SocketIO(
 )
 
 
-# FocusMode 負責管理目前選取的餐點與增減數量事件。
+# FocusMode 只管理 5 個餐點；確認餐點改由 OK 手勢獨立觸發。
 focus_mode = FocusMode(item_count=5)
 
 # 目前系統模式：focus 控制菜單，mouse 控制滑鼠。
