@@ -1,162 +1,485 @@
+* {
+    box-sizing: border-box;
+}
+
 body {
-
-    font-family: Arial;
-
-    background-color: #f5f5f5;
-
     margin: 0;
-
     padding: 0;
-}
-/* 模式列 */
-.mode-bar {
-
-    display: flex;
-
-    justify-content: center;
-
-    gap: 10px;
-
-    margin-top: 15px;
+    background-color: #f4f6f8;
+    color: #20242a;
+    font-family: Arial, "Microsoft JhengHei", sans-serif;
 }
 
-
-/* 模式按鈕 */
-.mode-bar button {
-
-    padding: 10px 20px;
-
-    border: none;
-
-    border-radius: 10px;
-
-    background-color: orange;
-
+/* 頁首用高對比色，讓展示時能快速看出系統名稱。 */
+.header {
+    text-align: center;
+    background-color: #f08a24;
     color: white;
+    padding: 22px 16px;
+}
 
+.header h1,
+.header p,
+.mode-panel h2,
+.gesture-guide h2 {
+    margin: 0;
+}
+
+.header p {
+    margin-top: 8px;
+    font-size: 18px;
+}
+
+/* 模式切換區獨立成一條控制列，避免被菜單卡片視覺淹沒。 */
+.mode-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    max-width: 1160px;
+    margin: 18px auto 0;
+    padding: 16px 20px;
+    background-color: white;
+    border: 2px solid #f08a24;
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(32, 36, 42, 0.08);
+}
+
+.section-label {
+    margin: 0 0 4px;
+    color: #69707a;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.mode-hint {
+    margin: 6px 0 0;
+    color: #69707a;
+    font-size: 15px;
+}
+
+.mode-bar {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.mode-bar button,
+.category-bar button,
+.control-area button {
+    border: none;
     cursor: pointer;
+    font-weight: 700;
+}
 
+.mode-bar button {
+    min-width: 150px;
+    padding: 12px 18px;
+    border-radius: 8px;
+    background-color: #e8edf2;
+    color: #20242a;
     font-size: 16px;
 }
 
-.mode-bar button.active {
-
-    background-color: darkorange;
-
-    box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
-
-}
-
-
-/* 滑鼠移上去 */
+.mode-bar button.active,
 .mode-bar button:hover {
-
-    background-color: darkorange;
-}
-
-
-/* 上方標題 */
-.header {
-
-    text-align: center;
-
-    background-color: orange;
-
+    background-color: #f08a24;
     color: white;
-
-    padding: 20px;
+    box-shadow: 0 0 0 3px rgba(240, 138, 36, 0.22);
 }
 
-
-/* 分類列 */
+/* 分類按鈕保留在模式列下方，讓點餐流程從上到下排列。 */
 .category-bar {
-
     display: flex;
-
     justify-content: center;
-
     gap: 10px;
-
-    padding: 10px;
+    padding: 14px 16px 6px;
 }
 
-
-/* 商品區 */
-.menu-container {
-
-    display: flex;
-
-    justify-content: center;
-
-    gap: 20px;
-
-    flex-wrap: wrap;
-
-    padding: 20px;
-}
-
-
-/* 商品卡片 */
-.menu-card {
-
+.category-bar button {
+    min-width: 78px;
+    padding: 9px 14px;
+    border-radius: 8px;
     background-color: white;
+    color: #20242a;
+    box-shadow: 0 2px 8px rgba(32, 36, 42, 0.08);
+}
 
-    width: 200px;
+.category-bar button:hover {
+    background-color: #fff2e5;
+}
 
-    border-radius: 10px;
+/* 主版面左側放菜單、右側放教學，測試手勢時不用離開畫面查說明。 */
+.page-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 20px;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 16px 20px 96px;
+}
 
-    padding: 15px;
+.order-column {
+    display: grid;
+    gap: 18px;
+    align-content: start;
+}
 
+.menu-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 18px;
+    align-content: start;
+}
+
+.menu-card {
+    width: 100%;
+    min-height: 260px;
+    padding: 16px;
     text-align: center;
-
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    background-color: white;
+    border: 3px solid transparent;
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(32, 36, 42, 0.08);
+    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-
-/* 商品圖片 */
 .menu-card img {
-
-    width: 100px;
-
-    height: 100px;
+    width: 112px;
+    height: 112px;
+    object-fit: contain;
 }
 
+.menu-card h2 {
+    margin: 12px 0 6px;
+    font-size: 22px;
+}
 
-/* 價格 */
 .price {
-
-    color: red;
-
-    font-size: 20px;
+    margin: 0;
+    color: #d62828;
+    font-size: 22px;
+    font-weight: 700;
 }
 
-
-/* 加減按鈕區 */
 .control-area {
-
     display: flex;
-
+    align-items: center;
     justify-content: center;
-
     gap: 10px;
+    margin-top: 14px;
+}
 
-    margin-top: 10px;
+.control-area button {
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+    background-color: #f08a24;
+    color: white;
+    font-size: 24px;
+}
+
+.quantity {
+    min-width: 42px;
+    font-size: 22px;
+    font-weight: 700;
 }
 
 .selected {
-
-    border: 4px solid orange;
-
-    transform: scale(1.05);
+    border-color: #f08a24;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(240, 138, 36, 0.25);
 }
 
-
-/* 底部 */
-.footer {
-
+.checkout-section {
+    padding: 18px;
     background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(32, 36, 42, 0.08);
+}
 
-    padding: 20px;
+.checkout-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 118px;
+    padding: 18px;
+    border: 3px solid transparent;
+    border-radius: 8px;
+    background-color: #20242a;
+    color: white;
+    cursor: pointer;
+    font-size: 24px;
+    font-weight: 800;
+    box-shadow: 0 4px 14px rgba(32, 36, 42, 0.12);
+    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    width: 100%;
+}
 
+.checkout-card span {
+    margin-top: 6px;
+    color: #f7c78f;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.checkout-card.selected {
+    border-color: #f08a24;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(240, 138, 36, 0.28);
+}
+
+/* Mouse Mode 讓加減按鈕變大，方便用虛擬滑鼠點擊。 */
+body.mouse-mode .control-area {
+    flex-wrap: wrap;
+}
+
+body.mouse-mode .control-area button {
+    width: 100%;
+    height: 74px;
+    font-size: 42px;
+}
+
+body.mouse-mode .control-area .quantity {
+    width: 100%;
     text-align: center;
+    font-size: 32px;
+}
+
+.gesture-guide {
+    position: sticky;
+    top: 16px;
+    align-self: start;
+    padding: 18px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(32, 36, 42, 0.08);
+}
+
+.gesture-guide h2 {
+    margin-top: 14px;
+    font-size: 20px;
+}
+
+.gesture-guide h2:first-of-type {
+    margin-top: 0;
+}
+
+.gesture-guide ul {
+    display: grid;
+    gap: 12px;
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* 教學列固定兩欄，左邊優先放手勢貼圖，非手勢才用文字徽章。 */
+.gesture-guide li {
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    min-height: 58px;
+    font-size: 16px;
+}
+
+.gesture-sticker,
+.gesture-badge {
+    width: 58px;
+    height: 58px;
+    border-radius: 12px;
+    background-color: #eef3f7;
+    box-shadow: inset 0 0 0 1px rgba(32, 36, 42, 0.08);
+}
+
+.gesture-sticker {
+    display: block;
+    object-fit: contain;
+}
+
+.gesture-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #20242a;
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.gesture-text {
+    display: block;
+    min-width: 0;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background-color: rgba(32, 36, 42, 0.55);
+}
+
+.modal-overlay[hidden] {
+    display: none;
+}
+
+.order-modal {
+    width: min(520px, 100%);
+    max-height: min(680px, 90vh);
+    overflow: auto;
+    padding: 22px;
+    border-radius: 8px;
+    background-color: white;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.28);
+}
+
+.modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.icon-button {
+    width: 38px;
+    height: 38px;
+    border: none;
+    border-radius: 8px;
+    background-color: #eef3f7;
+    color: #20242a;
+    cursor: pointer;
+    font-size: 28px;
+    line-height: 1;
+}
+
+.order-list {
+    display: grid;
+    gap: 10px;
+}
+
+.order-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 12px;
+    align-items: center;
+    padding: 12px;
+    border-radius: 8px;
+    background-color: #f4f6f8;
+}
+
+.order-row span:first-child {
+    font-weight: 800;
+}
+
+.empty-order {
+    margin: 0;
+    padding: 18px;
+    border-radius: 8px;
+    background-color: #fff3e6;
+    color: #8a4b13;
+    font-weight: 800;
+    text-align: center;
+}
+
+.order-total-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 2px solid #e8edf2;
+    font-size: 22px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.modal-actions button {
+    padding: 11px 16px;
+    border: none;
+    border-radius: 8px;
+    background-color: #e8edf2;
+    color: #20242a;
+    cursor: pointer;
+    font-weight: 800;
+}
+
+.modal-actions .primary-action {
+    background-color: #f08a24;
+    color: white;
+}
+
+.footer {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    background-color: white;
+    padding: 12px 20px;
+    text-align: center;
+    box-shadow: 0 -3px 12px rgba(32, 36, 42, 0.1);
+}
+
+.footer p {
+    margin: 2px 0;
+}
+
+.footer p:first-child {
+    color: #69707a;
+    font-weight: 700;
+}
+
+.footer p:last-child {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+@media (max-width: 860px) {
+    .mode-panel {
+        align-items: stretch;
+        flex-direction: column;
+        margin-right: 14px;
+        margin-left: 14px;
+    }
+
+    .mode-bar {
+        flex-direction: column;
+    }
+
+    .mode-bar button {
+        width: 100%;
+    }
+
+    .category-bar {
+        flex-wrap: wrap;
+    }
+
+    .page-layout {
+        grid-template-columns: 1fr;
+        padding-right: 14px;
+        padding-left: 14px;
+    }
+
+    .gesture-guide {
+        position: static;
+    }
+
+    .footer {
+        grid-template-columns: 1fr;
+        position: static;
+    }
 }

@@ -1,0 +1,334 @@
+{
+  "deck_title": "Gesture Control System 期末報告",
+  "subtitle": "手勢點餐系統：Focus Mode、Virtual Mouse、Flask 即時互動",
+  "slides": [
+    {
+      "title": "Gesture Control System",
+      "tag": "期末專題報告",
+      "bullets": [
+        "以攝影機辨識手勢，完成非接觸式點餐操作",
+        "Focus Mode：左右切換、上下調整數量、OK 兩段式確認",
+        "Virtual Mouse Mode：手掌控制游標、拇指點擊"
+      ],
+      "notes": "本專題的目標是做出可以實際展示的手勢點餐系統。使用者不需要碰鍵盤滑鼠，就可以透過攝影機辨識手勢，在網頁菜單上切換餐點、調整數量，最後使用 OK 手勢確認訂單。"
+    },
+    {
+      "title": "評分規範對應",
+      "tag": "報告策略",
+      "bullets": [
+        "內容完整度：架構、流程、功能、測試、成果都有說明",
+        "技術降維：用流程圖與手勢表降低程式理解門檻",
+        "實驗結果：列出測試項目、成功功能與改善紀錄",
+        "現場問答：預先準備常見問題與回答",
+        "團隊分工：依模組切分責任與報告段落"
+      ],
+      "notes": "這頁直接對應老師給的評分項目。我們的簡報不是只展示畫面，而是把需求、技術方法、測試結果、可能問題和分工都放進去，讓評審可以快速看到完整度。"
+    },
+    {
+      "title": "專題動機與需求",
+      "tag": "問題定義",
+      "bullets": [
+        "傳統點餐需要接觸滑鼠、鍵盤或觸控螢幕",
+        "手勢操作可以降低接觸成本，也能做出更直覺的展示效果",
+        "需求：穩定辨識、即時回饋、可切換模式、可確認訂單"
+      ],
+      "notes": "我們的動機是把手勢辨識應用到點餐情境。這個題目不只是辨識手勢，還要能和網頁互動，所以系統需要同時處理影像、手勢邏輯、後端事件和前端 UI。"
+    },
+    {
+      "title": "系統總體架構",
+      "tag": "架構",
+      "bullets": [
+        "Webcam 讀取影像，HandDetector 偵測手部 landmarks",
+        "GestureLogic 將 landmarks 轉成 LEFT / RIGHT / PLUS / MINUS / CHECKOUT",
+        "main.py 透過 Socket.IO 把手勢送給 Flask UI",
+        "FocusMode 更新菜單；VirtualMouse 控制 Windows 滑鼠"
+      ],
+      "diagram": ["Webcam", "HandDetector", "GestureLogic", "Socket.IO", "Flask UI"],
+      "notes": "整體流程是由攝影機開始，先取得影像，再由手部偵測器產生 landmarks。GestureLogic 負責把 landmarks 轉成高階手勢事件，最後透過 Socket.IO 更新網頁。這樣分層後，每個模組的責任都很清楚。"
+    },
+    {
+      "title": "技術環境與工具",
+      "tag": "技術",
+      "bullets": [
+        "Python 3.11：主程式、影像處理、Socket.IO client",
+        "OpenCV：攝影機畫面、鏡像與除錯顯示",
+        "MediaPipe：手部 landmarks 偵測",
+        "Flask + Flask-SocketIO：網頁與即時事件同步",
+        "HTML / CSS / JavaScript：菜單 UI、數量與訂單明細"
+      ],
+      "notes": "這頁說明技術棧。Python 負責影像與控制流程，MediaPipe 負責手部偵測，Flask 和 Socket.IO 負責把後端手勢即時傳到前端。前端則負責顯示菜單和訂單。"
+    },
+    {
+      "title": "主要操作流程",
+      "tag": "使用者流程",
+      "bullets": [
+        "張開手掌停留 1 秒：切換 Focus / Mouse 模式",
+        "Focus Mode：左右滑選餐點，上滑增加，下滑減少",
+        "第一次 OK：開啟確認明細",
+        "第二次 OK：送出訂單",
+        "Mouse Mode：手掌偏移移動游標，拇指手勢點擊"
+      ],
+      "notes": "使用者流程設計成兩種模式。Focus Mode 針對點餐，操作簡單明確；Mouse Mode 則讓使用者可以用手掌控制滑鼠。確認訂單採兩段式 OK，避免誤觸直接送出。"
+    },
+    {
+      "title": "Focus Mode 設計",
+      "tag": "控制邏輯",
+      "bullets": [
+        "FocusMode 只管理 5 個餐點索引",
+        "RIGHT / LEFT：循環切換目前餐點",
+        "PLUS / MINUS：對目前餐點加減數量",
+        "CHECKOUT：不混入餐點循環，獨立觸發確認流程"
+      ],
+      "notes": "Focus Mode 的重點是降低操作複雜度。原本確認餐點如果混在菜單循環裡，使用者要切到最後一格才確認；現在改成 OK 手勢獨立確認，操作更自然。"
+    },
+    {
+      "title": "手勢判斷邏輯",
+      "tag": "GestureLogic",
+      "bullets": [
+        "左右滑：比較食指指尖 x 位移",
+        "上 / 下滑：比較食指指尖 y 位移",
+        "OK：拇指與食指靠近，且中指、無名指、小指伸直",
+        "冷卻時間：避免同一手勢連續觸發",
+        "張開手掌停留：用於模式切換"
+      ],
+      "notes": "GestureLogic 是手勢辨識的核心。它不是直接做複雜模型分類，而是使用 landmarks 的幾何關係判斷，這樣比較容易解釋，也方便調整靈敏度。"
+    },
+    {
+      "title": "Virtual Mouse Mode",
+      "tag": "虛擬滑鼠",
+      "bullets": [
+        "使用手掌中心相對畫面中心的偏移量控制游標",
+        "加入 deadzone，避免手在中心附近微抖造成游標漂移",
+        "使用 Windows user32 API 移動滑鼠與點擊",
+        "拇指手勢觸發左鍵點擊"
+      ],
+      "notes": "虛擬滑鼠模式不是把手的位置直接映射到螢幕，而是依照偏移量產生移動速度，這樣比較像搖桿控制，也比較不容易突然跳動。"
+    },
+    {
+      "title": "Webcam 與 HandDetector",
+      "tag": "影像偵測",
+      "bullets": [
+        "Webcam 設定高解析度與鏡像畫面，提升操作直覺",
+        "HandDetector 優先使用 MediaPipe Tasks API",
+        "Tasks 失敗時改用 MediaPipe Solutions",
+        "保留 OpenCV fallback，方便沒有模型時除錯"
+      ],
+      "notes": "影像偵測層的設計重點是穩定性。MediaPipe Tasks API 準確度較好，所以優先使用；如果環境或模型有問題，會嘗試其他方式，避免整個系統直接無法展示。"
+    },
+    {
+      "title": "Flask 與 Socket.IO",
+      "tag": "即時同步",
+      "bullets": [
+        "Flask 提供菜單頁面",
+        "Socket.IO 傳送 mode_change 與 gesture 事件",
+        "後端只在 Focus Mode 時更新菜單",
+        "前端收到 focus_update 後更新選取、數量或確認明細"
+      ],
+      "notes": "Flask 和 Socket.IO 是後端與前端的橋梁。這樣主程式只需要送出手勢事件，網頁 UI 自己負責畫面變化，讓影像處理和前端顯示分工清楚。"
+    },
+    {
+      "title": "前端 UI 與確認流程",
+      "tag": "使用體驗",
+      "bullets": [
+        "菜單卡片顯示圖片、價格、數量與目前選取狀態",
+        "右側手勢教學使用 SVG 貼圖提示操作",
+        "確認餐點獨立放在菜單下方",
+        "第一次 OK 開明細；第二次 OK 送出訂單"
+      ],
+      "notes": "前端設計的重點是讓展示者和觀眾都看得懂目前狀態。右側有手勢教學，底部有模式、狀態和總金額。確認流程獨立放在下方，可以避免和餐點混淆。"
+    },
+    {
+      "title": "測試與驗證結果",
+      "tag": "實驗結果",
+      "bullets": [
+        "compileall：確認 Python 檔案語法正確",
+        "unittest：6 個 GestureLogic 單元測試通過",
+        "Flask render：首頁回傳 200 OK",
+        "頁面內容檢查：OK 手勢、確認餐點、訂單明細皆存在"
+      ],
+      "notes": "我們用三層驗證：第一層是 Python 語法，第二層是手勢邏輯單元測試，第三層是 Flask 頁面渲染。這可以證明不是只有畫面做出來，而是核心流程也有檢查。"
+    },
+    {
+      "title": "開發問題與解法",
+      "tag": "問題解決",
+      "bullets": [
+        "MediaPipe import 錯誤：統一 Python 3.11 與 mediapipe 版本",
+        "拇指加減不敏感：改成上滑 / 下滑調整數量",
+        "握拳確認不穩：改成 OK 手勢確認",
+        "誤送訂單風險：採兩段式 OK 確認"
+      ],
+      "notes": "這頁可以講我們遇到的實際問題。最重要的是，我們不是只修 bug，而是根據測試體驗改良操作設計，例如把不敏感的手勢換成更容易辨識的上滑下滑。"
+    },
+    {
+      "title": "資料夾與模組分工",
+      "tag": "團隊分工",
+      "bullets": [
+        "vision/：攝影機、手部偵測、手勢判斷",
+        "control/：Focus Mode 與虛擬滑鼠控制",
+        "flask_server/：Flask、Socket.IO、前端 UI",
+        "tests/：手勢邏輯單元測試",
+        "README / AGENTME：架構說明與修改規範"
+      ],
+      "notes": "分工可以依資料夾切。這樣每個人負責的範圍明確，也符合評分規範中要求的團隊合作分工。"
+    },
+    {
+      "title": "Demo 操作腳本",
+      "tag": "現場展示",
+      "bullets": [
+        "啟動 python main.py，開啟 http://localhost:5000",
+        "展示 Focus Mode：左右滑切換餐點，上下滑調整數量",
+        "展示 OK：第一次開明細，第二次送出訂單",
+        "展示模式切換：張開手掌停留 1 秒",
+        "展示 Mouse Mode：手掌控制游標，拇指點擊"
+      ],
+      "notes": "現場展示建議按照這個順序，先展示點餐核心功能，再展示模式切換和虛擬滑鼠。這樣觀眾比較容易理解系統從點餐到進階控制的完整性。"
+    },
+    {
+      "title": "可能問題 1：為什麼不用 AI 分類模型？",
+      "tag": "Q&A",
+      "bullets": [
+        "回答：本專題重點是即時互動與可展示穩定度",
+        "使用 landmarks 幾何規則，較容易除錯與調整",
+        "若未來要支援更多手勢，可再加入訓練模型"
+      ],
+      "notes": "如果老師問為什麼不用訓練模型，可以回答：目前手勢種類有限，規則式判斷已足夠，而且可解釋性高、延遲低。未來要擴充大量手勢時，才更適合導入模型分類。"
+    },
+    {
+      "title": "可能問題 2：如何避免誤觸？",
+      "tag": "Q&A",
+      "bullets": [
+        "冷卻時間避免短時間連續觸發",
+        "模式切換要求張開手掌穩定停留",
+        "OK 確認採兩段式流程，避免直接送出",
+        "滑鼠模式加入 deadzone 降低游標漂移"
+      ],
+      "notes": "這題可以從四個機制回答：冷卻時間、穩定停留、兩段式確認、滑鼠死區。這些設計都是為了降低誤觸，讓展示更穩。"
+    },
+    {
+      "title": "可能問題 3：系統限制與改善方向",
+      "tag": "Q&A",
+      "bullets": [
+        "限制：光線、背景、手部遮擋會影響 landmarks",
+        "限制：目前以單手與 Windows 展示為主",
+        "改善：加入手勢校正、靈敏度設定、訂單資料儲存",
+        "改善：支援更多平台與更多點餐品項"
+      ],
+      "notes": "這頁要誠實說明限制，同時提出合理改善方向。重點是讓老師看到我們知道系統還可以怎麼進步，而不是假裝沒有問題。"
+    },
+    {
+      "title": "程式碼講解分區",
+      "tag": "報告附錄",
+      "bullets": [
+        "main.py：整合 Flask、攝影機、Socket.IO 與模式流程",
+        "vision/：Webcam、HandDetector、GestureLogic",
+        "control/：FocusMode 與 VirtualMouse",
+        "flask_server/：後端事件與前端互動",
+        "tests/：手勢邏輯驗證"
+      ],
+      "notes": "如果報告時間足夠，可以用這頁進入程式碼講解。建議不要逐行講，而是依照模組分區，講每個區塊的責任、核心函式和為什麼這樣設計。"
+    },
+    {
+      "title": "結論",
+      "tag": "成果總結",
+      "bullets": [
+        "完成可操作的手勢點餐系統",
+        "具備 Focus Mode、Virtual Mouse Mode 與即時網頁回饋",
+        "已整理架構、測試、手勢教學與確認流程",
+        "未來可擴充資料庫、更多手勢與多平台支援"
+      ],
+      "notes": "結論要收斂到成果：我們完成了一個可以展示的手勢點餐系統，而且不只是辨識手勢，還包含完整的網頁互動、確認流程和測試驗證。"
+    }
+  ],
+  "code_sections": [
+    {
+      "name": "main.py 主流程",
+      "points": [
+        "run_flask()：把 Flask Server 放到背景執行緒，讓主執行緒可以保留給 OpenCV 攝影機迴圈。",
+        "connect_socketio_client()：主程式用 Socket.IO Client 連回本機 Flask Server，把手勢事件送到前端。",
+        "initialize_detector()：初始化 HandDetector，若 MediaPipe 不可用則提示使用者檢查 Python 與套件版本。",
+        "get_palm_center()：用多個掌心附近 landmarks 平均，讓滑鼠控制比單一指尖更穩定。",
+        "compute_cursor_speed()：加入 deadzone 與速度上限，避免手部微抖造成游標漂移。",
+        "main()：讀取 webcam frame、偵測手、依目前模式執行 Focus 或 Mouse 行為。"
+      ]
+    },
+    {
+      "name": "vision/gesture_logic.py 手勢邏輯",
+      "points": [
+        "can_trigger()：統一管理冷卻時間，避免同一手勢短時間重複觸發。",
+        "detect_swipe()：用食指指尖 x/y 位移判斷 LEFT、RIGHT、PLUS、MINUS。",
+        "detect_ok_gesture()：拇指與食指靠近，且其他三指伸直時觸發 CHECKOUT。",
+        "detect_mode_switch()：要求張開手掌穩定停留，降低一般滑動時誤切模式。",
+        "detect_mouse_click()：拇指姿勢成立時觸發滑鼠左鍵，並用 ready 狀態避免連點。"
+      ]
+    },
+    {
+      "name": "vision/hand_detector.py 手部偵測",
+      "points": [
+        "HandDetector 優先使用 MediaPipe Tasks API，因為 landmarks 品質較穩。",
+        "Tasks 初始化失敗時改用 MediaPipe Solutions，增加環境相容性。",
+        "若 MediaPipe 無法使用，可保留 OpenCV fallback 方便開發除錯。",
+        "SimpleLandmarksContainer 統一輸出格式，讓 GestureLogic 不需知道目前是哪種偵測器。"
+      ]
+    },
+    {
+      "name": "vision/webcam.py 攝影機",
+      "points": [
+        "初始化時設定解析度與 FPS，提升手部偵測畫面品質。",
+        "get_frame() 會鏡像畫面，讓使用者看到的方向與手勢方向一致。",
+        "release() 負責釋放攝影機資源，避免下次啟動時被占用。"
+      ]
+    },
+    {
+      "name": "control/focus_mode.py Focus 模式",
+      "points": [
+        "current_index 記錄目前選到第幾個餐點。",
+        "RIGHT / LEFT 會用循環方式切換餐點，讓使用者不用擔心超出範圍。",
+        "PLUS / MINUS 對目前餐點加減數量。",
+        "CHECKOUT 不改變餐點索引，而是通知前端進入確認流程。"
+      ]
+    },
+    {
+      "name": "control/virtual_mouse.py 虛擬滑鼠",
+      "points": [
+        "使用 Windows user32 API 控制游標，符合目前展示環境。",
+        "move_by() 用相對位移控制游標，是主系統 Mouse Mode 的核心。",
+        "_initialize_from_system_cursor() 先讀取目前游標位置，避免切換模式時游標突然跳動。",
+        "click_left() 模擬滑鼠左鍵按下與放開。"
+      ]
+    },
+    {
+      "name": "flask_server/app.py Flask 後端",
+      "points": [
+        "home() 回傳主頁 index.html。",
+        "handle_mode_change() 接收前端模式切換，並同步通知所有連線端。",
+        "handle_gesture() 接收 main.py 傳來的手勢，只有 Focus Mode 會更新菜單。",
+        "FocusMode(item_count=5) 表示後端只管理 5 個餐點，確認餐點由 OK 手勢獨立觸發。"
+      ]
+    },
+    {
+      "name": "flask_server/static/script.js 前端互動",
+      "points": [
+        "getSelectableItems() 取得 5 個餐點卡片，確認餐點不混入餐點循環。",
+        "increase() / decrease() 更新數量與總金額。",
+        "handleCheckoutConfirm() 是兩段式 OK 的核心：明細未開時開明細，已開時送出訂單。",
+        "socket.on('focus_update') 依 MOVE、INCREASE、DECREASE、CHECKOUT 更新 UI。"
+      ]
+    },
+    {
+      "name": "flask_server/templates/index.html 與 style.css",
+      "points": [
+        "index.html 負責菜單結構、模式區、手勢教學、確認餐點與訂單明細彈窗。",
+        "style.css 用卡片、右側教學、底部狀態列分區，讓展示時畫面清楚。",
+        "手勢教學使用 SVG 貼圖，讓使用者能直接看懂每個動作。"
+      ]
+    },
+    {
+      "name": "tests/test_gesture_logic.py 測試",
+      "points": [
+        "使用簡化 Landmark 模擬 MediaPipe 輸出，讓測試不依賴攝影機。",
+        "測試張開手掌、模式切換、左右滑、上下滑與 OK 手勢。",
+        "目前 6 個單元測試通過，可降低手勢邏輯修改後壞掉的風險。"
+      ]
+    }
+  ]
+}
