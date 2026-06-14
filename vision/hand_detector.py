@@ -1,4 +1,5 @@
 import cv2
+import math
 import os
 import urllib.request
 
@@ -138,6 +139,91 @@ class HandDetector:
             print(f"MediaPipe detection error: {e}")
             return frame, None
 
+    def _get_fingertips(self, contour, palm_center, w, h):
+        hull = cv2.convexHull(contour, returnPoints=True)
+        if hull is None or len(hull) == 0:
+            return []
+
+        hull_pts = [tuple(pt[0]) for pt in hull]
+        candidates = []
+        palm_x, palm_y = palm_center
+
+        for i in range(len(hull_pts)):
+            prev_pt = hull_pts[i - 1]
+            curr_pt = hull_pts[i]
+            next_pt = hull_pts[(i + 1) % len(hull_pts)]
+
+            # Must be above the palm center and reasonably far away
+            if curr_pt[1] > palm_y + 20:
+                continue
+
+            def vec(a, b):
+                return (b[0] - a[0], b[1] - a[1])
+
+            v1 = vec(curr_pt, prev_pt)
+            v2 = vec(curr_pt, next_pt)
+            dot = v1[0] * v2[0] + v1[1] * v2[1]
+            mag1 = math.hypot(v1[0], v1[1])
+            mag2 = math.hypot(v2[0], v2[1])
+            if mag1 == 0 or mag2 == 0:
+                continue
+
+            angle = math.acos(max(-1.0, min(1.0, dot / (mag1 * mag2))))
+            distance = math.hypot(curr_pt[0] - palm_x, curr_pt[1] - palm_y)
+
+            # fingertip candidate should have a sharp hull angle and be outside the palm
+            if angle < 1.3 and distance > 0.08 * max(w, h):
+                candidates.append((curr_pt[0], curr_pt[1], distance))
+
+        # Remove duplicates by spatial proximity
+        filtered = []
+        for x, y, dist in sorted(candidates, key=lambda item: item[2], reverse=True):
+            if not any(math.hypot(x - fx, y - fy) < 25 for fx, fy, _ in filtered):
+                filtered.append((x, y, dist))
+
+        return [(x, y) for x, y, _ in filtered[:5]]
+
+    def _approximate_landmarks(self, tips, palm_center, w, h):
+        palm_x, palm_y = palm_center
+
+        if len(tips) < 5:
+            # If fingertips are missing, approximate from contour extremes
+            tips = sorted(tips, key=lambda p: (p[1], p[0]))
+            while len(tips) < 5:
+                tips.append((palm_x, palm_y))
+
+        # Thumb is the tip furthest horizontally from palm center
+        thumb_tip = max(tips, key=lambda p: abs(p[0] - palm_x))
+        remaining = [p for p in tips if p != thumb_tip]
+        remaining = sorted(remaining, key=lambda p: p[0])
+
+        # If we have fewer than 4 other fingers, pad with palm edge points
+        while len(remaining) < 4:
+            remaining.append((palm_x, palm_y - int(0.15 * h)))
+
+        ordered_tips = [thumb_tip] + remaining[:4]
+
+        landmarks = [SimpleLandmark(palm_x / w, palm_y / h)]
+
+        def interpolate(point_a, point_b, ratio):
+            return (
+                point_a[0] + (point_b[0] - point_a[0]) * ratio,
+                point_a[1] + (point_b[1] - point_a[1]) * ratio,
+            )
+
+        for tip in ordered_tips:
+            for ratio in (0.25, 0.5, 0.75, 1.0):
+                x, y = interpolate((palm_x, palm_y), tip, ratio)
+                landmarks.append(SimpleLandmark(x / w, y / h))
+
+        # Ensure exactly 21 landmarks
+        if len(landmarks) > 21:
+            landmarks = landmarks[:21]
+        while len(landmarks) < 21:
+            landmarks.append(SimpleLandmark(palm_x / w, palm_y / h))
+
+        return landmarks
+
     def _opencv_detect(self, frame):
         """OpenCV-based hand detection using skin color and shape analysis."""
         h, w = frame.shape[:2]
@@ -184,36 +270,12 @@ class HandDetector:
             return None, None
 
         # Bbox relative size: palm shouldn't be majority of frame
-        if bh > 0.6 * h or bw > 0.6 * w:
+        if bh > 0.8 * h or bw > 0.8 * w:
             return None, None
 
         # Aspect ratio check
         aspect = float(bw) / bh if bh > 0 else 0
         if aspect < 0.4 or aspect > 2.5:
-            return None, None
-
-        # Convexity defects (expect multiple for open palm)
-        hull = cv2.convexHull(c, returnPoints=False)
-        defect_count = 0
-        try:
-            if hull is not None and len(hull) > 3:
-                defects = cv2.convexityDefects(c, hull)
-                if defects is not None:
-                    for i in range(defects.shape[0]):
-                        s, e, f, depth = defects[i, 0]
-                        if depth / 256.0 > 0.01 * (bw + bh):
-                            defect_count += 1
-        except Exception:
-            defect_count = 0
-
-        if defect_count < 2:
-            return None, None
-
-        # Solidity check
-        hull_pts = cv2.convexHull(c)
-        hull_area = cv2.contourArea(hull_pts) if hull_pts is not None else 0
-        solidity = float(area) / hull_area if hull_area > 0 else 0
-        if solidity < 0.4:
             return None, None
 
         # Compute centroid
@@ -223,17 +285,23 @@ class HandDetector:
 
         cx = int(M["m10"] / M["m00"])
         cy = int(M["m01"] / M["m00"])
-
-        nx = cx / w
-        ny = cy / h
+        palm_center = (cx, cy)
 
         # Draw on frame
         cv2.drawContours(frame, [c], -1, (0, 255, 0), 2)
         cv2.circle(frame, (cx, cy), 8, (0, 0, 255), -1)
 
-        # Create landmark container with centroid repeated
-        landmarks = [(nx, ny)] * 21
-        return frame, SimpleLandmarksContainer(landmarks)
+        # Build approximate 21 landmarks from contour and fingertip candidates
+        fingers = self._get_fingertips(c, palm_center, w, h)
+        landmarks = self._approximate_landmarks(fingers, palm_center, w, h)
+
+        # Draw landmarks for debug
+        for lm in landmarks:
+            px = int(lm.x * w)
+            py = int(lm.y * h)
+            cv2.circle(frame, (px, py), 3, (255, 255, 0), -1)
+
+        return frame, SimpleLandmarksContainer([(lm.x, lm.y) for lm in landmarks])
 
     def detect_hands(self, frame):
         if self.mode == "tasks":

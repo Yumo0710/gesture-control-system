@@ -186,6 +186,11 @@ while True:
             # apply movement (note: positive oy -> palm below center -> move down)
             x, y = virtual_mouse.move_by(dx, dy)
 
+            click = gesture_logic.detect_mouse_click(hand_landmarks)
+            if click:
+                virtual_mouse.click_left()
+                cv2.putText(frame, "CLICK", (30, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+
             cv2.putText(frame, f"Vel: {int(dx)},{int(dy)}", (30, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 
         else:

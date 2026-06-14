@@ -22,6 +22,9 @@ class GestureLogic:
         # 大拇指是否已回到中立
         self.thumb_ready = False
 
+        # 滑鼠點擊準備狀態
+        self.thumb_click_ready = True
+
 
     # =========================
     # 冷卻時間判定
@@ -37,6 +40,22 @@ class GestureLogic:
         self.last_trigger_time = current_time
 
         return True
+
+
+    def detect_mouse_click(self, hand_landmarks):
+        thumb_tip = hand_landmarks.landmark[4]
+        thumb_ip = hand_landmarks.landmark[3]
+        thumb_mcp = hand_landmarks.landmark[2]
+
+        if thumb_tip.y < thumb_ip.y < thumb_mcp.y:
+            if self.thumb_click_ready and self.can_trigger():
+                self.thumb_click_ready = False
+                print("LEFT CLICK")
+                return True
+            return False
+
+        self.thumb_click_ready = True
+        return False
 
 
     # =========================

@@ -8,7 +8,7 @@ from control.virtual_mouse import VirtualMouse
 
 def main():
     webcam = Webcam()
-    detector = HandDetector()
+    detector = HandDetector(require_mediapipe=True)
     cursor = VirtualMouse(smoothing=0.3)
 
     print("啟動虛擬滑鼠控制，按 Q 或 Esc 結束")

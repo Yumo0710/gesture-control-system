@@ -99,6 +99,7 @@ function setMode(mode) {
     });
 
     updateModeButtons();
+    document.body.classList.toggle('mouse-mode', controlMode === 'mouse');
 }
 
 
@@ -177,6 +178,7 @@ socket.on("mode_changed", function(data) {
         controlMode === 'focus' ? 'Focus mode enabled' : 'Mouse mode enabled';
 
     updateModeButtons();
+    document.body.classList.toggle('mouse-mode', controlMode === 'mouse');
 
 });
 
@@ -184,10 +186,6 @@ socket.on("mode_changed", function(data) {
 // 接收 Focus 更新
 socket.on("focus_update", function(data) {
 
-    console.log(data);
-
-
-    // MOVE
     if(data.type === "MOVE") {
 
         currentIndex = data.index;
@@ -199,7 +197,6 @@ socket.on("focus_update", function(data) {
     }
 
 
-    // INCREASE
     else if(data.type === "INCREASE") {
 
         currentIndex = data.index;
@@ -213,7 +210,6 @@ socket.on("focus_update", function(data) {
     }
 
 
-    // DECREASE
     else if(data.type === "DECREASE") {
 
         currentIndex = data.index;
@@ -227,7 +223,6 @@ socket.on("focus_update", function(data) {
     }
 
 
-    // SELECT
     else if(data.type === "SELECT") {
 
         currentIndex = data.index;
@@ -237,4 +232,5 @@ socket.on("focus_update", function(data) {
         document.getElementById("status-text").innerText =
             "Select Item";
     }
+
 });
