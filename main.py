@@ -1,8 +1,18 @@
+import os
 import cv2
 import time
 
 # 多執行緒
 import threading
+import sys
+import tkinter as tk
+from tkinter import messagebox
+
+# Ensure we run inside the project virtual environment if available.
+project_venv = os.path.abspath(os.path.join(os.path.dirname(__file__), ".venv311", "Scripts", "python.exe"))
+if os.path.exists(project_venv) and os.path.normcase(sys.executable) != os.path.normcase(project_venv):
+    print("Re-launching with project virtualenv:", project_venv)
+    os.execv(project_venv, [project_venv] + sys.argv)
 
 # SocketIO Client
 import socketio
@@ -74,6 +84,8 @@ except Exception as e:
 
 
 print("已連接 Flask Server")
+print("Python executable:", sys.executable)
+print("Python version:", sys.version)
 
 
 # Webcam
@@ -84,8 +96,14 @@ try:
     detector = HandDetector(require_mediapipe=True)
 except ImportError as e:
     print(e)
-    print('MediaPipe Hands not available; falling back to OpenCV detector.')
-    detector = HandDetector(require_mediapipe=False)
+    root = tk.Tk()
+    root.withdraw()
+    messagebox.showerror(
+        "MediaPipe Initialization Failed",
+        "MediaPipe 初始化失敗，請重新啟動程式後重試。"
+    )
+    root.destroy()
+    sys.exit(1)
 
 # Gesture Logic
 gesture_logic = GestureLogic()
@@ -96,6 +114,10 @@ virtual_mouse = VirtualMouse()
 # 目前控制模式
 current_mode = "focus"
 
+# 預先建立 Webcam 視窗
+cv2.namedWindow("Webcam", cv2.WINDOW_NORMAL)
+cv2.resizeWindow("Webcam", 1280, 720)
+window_opened = True
 
 # 接收模式變更
 @sio.on("mode_changed")
@@ -217,14 +239,13 @@ while True:
 
 
     # 顯示畫面
-    cv2.imshow("Webcam", frame)
-
-    # 如果視窗被關閉，跳出迴圈
     try:
         if cv2.getWindowProperty("Webcam", cv2.WND_PROP_VISIBLE) < 1:
             break
     except Exception:
-        pass
+        break
+
+    cv2.imshow("Webcam", frame)
 
     # Q 或 Esc 離開
     k = cv2.waitKey(1)

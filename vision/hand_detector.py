@@ -76,12 +76,34 @@ class HandDetector:
                 print("HandLandmarker mode: OK")
 
         except Exception as e:
-            print(f"HandLandmarker setup failed: {e}, falling back to OpenCV.")
+            print(f"HandLandmarker setup failed: {e}")
             self.mode = None
             self.hand_detector = None
 
-        # Final fallback: OpenCV contour method
         if self.mode is None:
+            # Fallback to MediaPipe Solutions Hands if Tasks API is unavailable
+            try:
+                import mediapipe as mp
+                self.mp_hands = mp.solutions.hands
+                self.mp_drawing = mp.solutions.drawing_utils
+                self.hand_detector = self.mp_hands.Hands(
+                    static_image_mode=False,
+                    max_num_hands=1,
+                    min_detection_confidence=0.7,
+                    min_tracking_confidence=0.7,
+                )
+                self.mode = "solutions"
+                print("MediaPipe Solutions Hands mode: OK")
+            except Exception as e:
+                print(f"MediaPipe Solutions Hands setup failed: {e}")
+                self.mode = None
+                self.hand_detector = None
+
+        if self.mode is None:
+            if require_mediapipe:
+                raise ImportError(
+                    "MediaPipe could not be initialized. Please install MediaPipe and ensure the environment supports it."
+                )
             self.mode = "opencv"
             print("Using OpenCV detector mode.")
 
@@ -137,6 +159,44 @@ class HandDetector:
 
         except Exception as e:
             print(f"MediaPipe detection error: {e}")
+            return frame, None
+
+    def _solutions_detect(self, frame):
+        """Use MediaPipe Solutions Hands to detect hand landmarks."""
+        try:
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            result = self.hand_detector.process(rgb_frame)
+
+            if result.multi_hand_landmarks and len(result.multi_hand_landmarks) > 0:
+                hand_landmarks = result.multi_hand_landmarks[0]
+                landmarks = []
+                h, w = frame.shape[:2]
+
+                for lm in hand_landmarks.landmark:
+                    x = lm.x
+                    y = lm.y
+                    landmarks.append((x, y))
+                    px = int(x * w)
+                    py = int(y * h)
+                    cv2.circle(frame, (px, py), 3, (0, 255, 0), -1)
+
+                connections = [
+                    (0, 1), (1, 2), (2, 3), (3, 4),
+                    (0, 5), (5, 6), (6, 7), (7, 8),
+                    (0, 9), (9, 10), (10, 11), (11, 12),
+                    (0, 13), (13, 14), (14, 15), (15, 16),
+                    (0, 17), (17, 18), (18, 19), (19, 20),
+                ]
+                for start, end in connections:
+                    if start < len(landmarks) and end < len(landmarks):
+                        x1, y1 = landmarks[start]
+                        x2, y2 = landmarks[end]
+                        cv2.line(frame, (int(x1 * w), int(y1 * h)), (int(x2 * w), int(y2 * h)), (0, 255, 0), 1)
+
+                return frame, SimpleLandmarksContainer(landmarks)
+            return frame, None
+        except Exception as e:
+            print(f"MediaPipe Solutions detection error: {e}")
             return frame, None
 
     def _get_fingertips(self, contour, palm_center, w, h):
@@ -306,6 +366,8 @@ class HandDetector:
     def detect_hands(self, frame):
         if self.mode == "tasks":
             return self._mediapipe_detect(frame)
+        elif self.mode == "solutions":
+            return self._solutions_detect(frame)
         else:  # opencv
             result_frame, landmarks = self._opencv_detect(frame)
             return result_frame if result_frame is not None else frame, landmarks

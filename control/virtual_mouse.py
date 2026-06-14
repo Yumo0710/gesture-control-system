@@ -48,3 +48,13 @@ class VirtualMouse:
 
         self.user32.SetCursorPos(self.current_x, self.current_y)
         return self.current_x, self.current_y
+
+    def click_left(self):
+        """Simulate a left mouse click at current position."""
+        # Mouse event constants
+        MOUSEEVENTF_LEFTDOWN = 0x0002
+        MOUSEEVENTF_LEFTUP = 0x0004
+        
+        # Perform left click: down + up
+        self.user32.mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+        self.user32.mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
