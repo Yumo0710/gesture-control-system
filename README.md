@@ -22,11 +22,13 @@ gesture-control-system/
 │  └─ gesture_logic.py             # 揮手、握拳、拇指、點擊與模式切換手勢判斷
 ├─ flask_server/
 │  ├─ app.py                       # Flask 頁面與 Socket.IO 事件處理
-│  ├─ templates/index.html         # 菜單操作頁面，含模式切換與手勢教學
+│  ├─ templates/index.html         # 菜單操作頁面，含模式切換與手勢貼圖教學
 │  └─ static/
-│     ├─ style.css                 # 前端樣式、響應式版面與教學 icon 對齊
+│     ├─ style.css                 # 前端樣式、響應式版面與教學貼圖對齊
 │     ├─ script.js                 # 前端模式切換、快捷鍵、分類篩選與數量更新邏輯
-│     └─ images/                   # 菜單圖片素材
+│     └─ images/
+│        ├─ gestures/              # 手勢教學 SVG 貼圖
+│        └─ *.png                  # 菜單圖片素材
 ├─ tests/
 │  └─ test_gesture_logic.py        # 手勢判斷的基本單元測試
 └─ vision_models/
@@ -108,7 +110,7 @@ python -m compileall .
 python -m unittest discover -s tests
 ```
 
-若修改前端互動，請再開啟 `http://localhost:5000` 檢查模式切換、手勢教學與菜單狀態。
+若修改前端互動，請再開啟 `http://localhost:5000` 檢查模式切換、手勢貼圖教學與菜單狀態。
 
 ## 修改原則
 

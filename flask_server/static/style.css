@@ -112,9 +112,9 @@ body {
 /* 主版面左側放菜單、右側放教學，測試手勢時不用離開畫面查說明。 */
 .page-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 280px;
+    grid-template-columns: minmax(0, 1fr) 300px;
     gap: 20px;
-    max-width: 1160px;
+    max-width: 1180px;
     margin: 0 auto;
     padding: 16px 20px 96px;
 }
@@ -223,32 +223,42 @@ body.mouse-mode .control-area .quantity {
 
 .gesture-guide ul {
     display: grid;
-    gap: 10px;
+    gap: 12px;
     margin: 12px 0 0;
     padding: 0;
     list-style: none;
 }
 
-/* 教學列固定兩欄，避免 icon 被中文說明擠歪。 */
+/* 教學列固定兩欄，左邊優先放手勢貼圖，非手勢才用文字徽章。 */
 .gesture-guide li {
     display: grid;
-    grid-template-columns: 42px minmax(0, 1fr);
+    grid-template-columns: 58px minmax(0, 1fr);
     align-items: center;
     gap: 12px;
-    min-height: 40px;
+    min-height: 58px;
     font-size: 16px;
 }
 
-.gesture-icon {
+.gesture-sticker,
+.gesture-badge {
+    width: 58px;
+    height: 58px;
+    border-radius: 12px;
+    background-color: #eef3f7;
+    box-shadow: inset 0 0 0 1px rgba(32, 36, 42, 0.08);
+}
+
+.gesture-sticker {
+    display: block;
+    object-fit: contain;
+}
+
+.gesture-badge {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 8px;
-    background-color: #eef3f7;
     color: #20242a;
-    font-size: 17px;
+    font-size: 18px;
     font-weight: 800;
     line-height: 1;
     white-space: nowrap;

@@ -97,30 +97,51 @@
             </div>
         </section>
 
-        <!-- 教學列使用固定寬度 icon 欄，避免中文字或符號造成跑版。 -->
+        <!-- 教學區優先使用手勢貼圖；鍵盤與 UI 不是手勢，因此保留文字徽章。 -->
         <aside class="gesture-guide" aria-label="操作教學">
             <p class="section-label">操作教學</p>
 
             <h2>切換模式</h2>
             <ul>
-                <li><span class="gesture-icon">掌</span><span class="gesture-text">張開手掌停住 1 秒：切換模式</span></li>
-                <li><span class="gesture-icon">F</span><span class="gesture-text">按 F：切到 Focus Mode</span></li>
-                <li><span class="gesture-icon">M</span><span class="gesture-text">按 M：切到 Virtual Mouse</span></li>
-                <li><span class="gesture-icon">UI</span><span class="gesture-text">點上方按鈕：手動切換模式</span></li>
+                <li>
+                    <img class="gesture-sticker" src="{{ url_for('static', filename='images/gestures/open_palm.svg') }}" alt="張開手掌">
+                    <span class="gesture-text">張開手掌停住 1 秒：切換模式</span>
+                </li>
+                <li><span class="gesture-badge">F</span><span class="gesture-text">按 F：切到 Focus Mode</span></li>
+                <li><span class="gesture-badge">M</span><span class="gesture-text">按 M：切到 Virtual Mouse</span></li>
+                <li><span class="gesture-badge">UI</span><span class="gesture-text">點上方按鈕：手動切換模式</span></li>
             </ul>
 
             <h2>Focus Mode</h2>
             <ul>
-                <li><span class="gesture-icon">LR</span><span class="gesture-text">左右揮動：切換餐點</span></li>
-                <li><span class="gesture-icon">拳</span><span class="gesture-text">握拳：進入數量調整</span></li>
-                <li><span class="gesture-icon">+</span><span class="gesture-text">拇指向上：增加數量</span></li>
-                <li><span class="gesture-icon">-</span><span class="gesture-text">拇指向下：減少數量</span></li>
+                <li>
+                    <img class="gesture-sticker" src="{{ url_for('static', filename='images/gestures/swipe_lr.svg') }}" alt="左右揮動">
+                    <span class="gesture-text">左右揮動：切換餐點</span>
+                </li>
+                <li>
+                    <img class="gesture-sticker" src="{{ url_for('static', filename='images/gestures/fist.svg') }}" alt="握拳">
+                    <span class="gesture-text">握拳：進入數量調整</span>
+                </li>
+                <li>
+                    <img class="gesture-sticker" src="{{ url_for('static', filename='images/gestures/thumb_up.svg') }}" alt="拇指向上">
+                    <span class="gesture-text">拇指向上：增加數量</span>
+                </li>
+                <li>
+                    <img class="gesture-sticker" src="{{ url_for('static', filename='images/gestures/thumb_down.svg') }}" alt="拇指向下">
+                    <span class="gesture-text">拇指向下：減少數量</span>
+                </li>
             </ul>
 
             <h2>Virtual Mouse</h2>
             <ul>
-                <li><span class="gesture-icon">移</span><span class="gesture-text">手掌離中心：移動游標</span></li>
-                <li><span class="gesture-icon">點</span><span class="gesture-text">拇指點擊：滑鼠左鍵</span></li>
+                <li>
+                    <img class="gesture-sticker" src="{{ url_for('static', filename='images/gestures/move_palm.svg') }}" alt="手掌移動">
+                    <span class="gesture-text">手掌離中心：移動游標</span>
+                </li>
+                <li>
+                    <img class="gesture-sticker" src="{{ url_for('static', filename='images/gestures/click_thumb.svg') }}" alt="拇指點擊">
+                    <span class="gesture-text">拇指點擊：滑鼠左鍵</span>
+                </li>
             </ul>
         </aside>
     </main>
